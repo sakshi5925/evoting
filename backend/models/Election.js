@@ -3,22 +3,23 @@ import mongoose from "mongoose";
 const electionSchema = new mongoose.Schema({
   name: String,
   description: String,
-  managerAddress: String, // from blockchain
-  contractAddress: String, // deployed Election contract address
+  managerAddress: String,
+  contractAddress: {type: String, unique: true},
   status: {
     type: String,
     enum: ["Created", "Registration", "Voting", "Ended", "ResultDeclared"],
     default: "Created",
   },
-  startTime: Number, // UNIX timestamp
+  startTime: Number, 
   endTime: Number,
   registrationDeadline: Number,
+  startdate: Date,
+  enddate: Date,
   totalVotes: { type: Number, default: 0 },
+  totalCandidates: { type: Number, default: 0 },
   candidates: [{ type: mongoose.Schema.Types.ObjectId, ref: "Candidate" }],
-  blockchainTxHash: String, // optional - creation transaction hash
   isActive: { type: Boolean, default: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  createdAt: { type: Date, default: Date.now },
+  
 });
 
 export default mongoose.model("Election", electionSchema);

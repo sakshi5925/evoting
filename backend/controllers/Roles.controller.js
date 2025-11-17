@@ -1,87 +1,111 @@
 import { ethers } from "ethers";
-import { rolesAbi, RolesAddress, provider } from "../utils/blockchain.js";
+import { rolesAbi, RolesAddress, provider, RolesContract } from "../utils/blockchain.js";
+import {User} from "../models/User.js";
 
+export const AssignRole = async function (res, req) {
+    try {
 
-export  const addUser=async function(res,req){
-        try{
+        const { privateKey, walletAddress, role, name, DOB, AdhaarNumber } = req.body;
 
-        const { PRIVATE_KEY, userAddress, role } = req.body;
-
-        if (!PRIVATE_KEY) {
+        if (!privateKey) {
             return res.status(400).json({ message: "Private key is required" });
-        
+
         }
 
-        console.log("User private key:", PRIVATE_KEY);
-        console.log("User address:", userAddress);
+        console.log("User private key:", privateKey);
+        console.log("User address:", walletAddress);
         console.log("Role:", role);
 
-        const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-
-        const RolesContract = new ethers.Contract(RolesAddress, rolesAbi, wallet);
+        const RoleContract = RolesContract(privateKey);
 
         let tx;
 
         switch (role) {
-         case "admin":
-        tx = await RolesContract.addSuperAdmin(userAddress);
-        break;
-         case "electionManager":
-        tx = await RolesContract.addElectionManager(userAddress);
-        break;
-         case "electionAuthority":
-        tx = await RolesContract.addElectionAuthority(userAddress);
-        break;
-         case "voter":
-        tx = await RolesContract.addVoter(userAddress);
-        break;
-         default:
-        return res.status(400).json({ message: "Invalid role" });
-    }
+            case "admin":
+                tx = await RoleContract.addSuperAdmin(walletAddress);
+                break;
+            case "electionManager":
+                tx = await RoleContract.addElectionManager(walletAddress);
+                break;
+            case "electionAuthority":
+                tx = await RoleContract.addElectionAuthority(walletAddress);
+                break;
+            case "voter":
+                tx = await RoleContract.addVoter(walletAddress);
+                break;
+            default:
+                return res.status(400).json({ message: "Invalid role" });
+
+
+        }
         await tx.wait();
-        console.log(`${role} role assigned to ${userAddress}`);
-        return res.status(200).json({ message: `${role} assigned to ${userAddress}` });
-    
+        console.log(`${role} role assigned to ${walletAddress}`);
+        
+        const user = await User.findOne({ walletAddress });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        user.set({ role: role });
+        await user.save();
+
+
+
+        return res.status(200).json({ message: `${role} assigned to ${walletAddress}` });
+
     }
-    
-        catch (error) {
+
+    catch (error) {
         console.error("Error assigning role:", error);
         return res.status(500).json({ error: error.message });
     }
 
 }
 
-export const removeUser=async function(res,req){
-    
-    try{
-        const { PRIVATE_KEY, userAddress, role } = req.body;
+export const removeRole = async function (res, req) {
 
-        if (!PRIVATE_KEY) {
+    try {
+        const { privateKey, walletAddress, role } = req.body;
+
+        if (!privateKey) {
             return res.status(400).json({ message: "Private key is required" });
         }
 
-        const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-        
+        const wallet = new ethers.Wallet(privateKey, provider);
+
         const RolesContract = new ethers.Contract(RolesAddress, rolesAbi, wallet);
 
         let tx;
 
         switch (role) {
-         case "admin":
-        tx = await RolesContract.removeSuperAdmin(userAddress);
-        break;
-         case "electionManager":
-        tx = await RolesContract.removeElectionManager(userAddress);
-        break;
-         case "electionAuthority":
-        tx = await RolesContract.removeElectionAuthority(userAddress);
-        break;
-         case "voter":
-        tx = await RolesContract.removeVoter(userAddress);
-        break;
-         default:
-        return res.status(400).json({ message: "Invalid role" });
-    }
+            case "admin":
+                tx = await RolesContract.removeSuperAdmin(walletAddress);
+                break;
+            case "electionManager":
+                tx = await RolesContract.removeElectionManager(walletAddress);
+                break;
+            case "electionAuthority":
+                tx = await RolesContract.removeElectionAuthority(walletAddress);
+                break;
+            case "voter":
+                tx = await RolesContract.removeVoter(walletAddress);
+                break;
+            default:
+                return res.status(400).json({ message: "Invalid role" });
+        }
+        await tx.wait();
+        console.log(`${role} role removed from ${walletAddress}`);
+        
+        const user = await User.findOne({ walletAddress });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        user.set({ role: user });
+        await user.save();
+
+        return res.status(200).json({ message: `${role} removed from ${walletAddress}` });
 
     }
 
@@ -92,17 +116,18 @@ export const removeUser=async function(res,req){
 
 }
 
-export const checkRoles=async function(res,req){
+export const checkRoles = async function (res, req) {
 
-    try{
-        const { userAddress } = req.body;
+    try {
+        const { walletAddress } = req.body;
 
         const RolesContract = new ethers.Contract(RolesAddress, rolesAbi, provider);
-        
-        const isAdmin = await RolesContract.isSuperAdmin(userAddress);
-        const isElectionManager = await RolesContract.isElectionManager(userAddress);
-        const isElectionAuthority = await RolesContract.isElectionAuthority(userAddress);
-        const isVoter = await RolesContract.isVoter(userAddress);
+
+        const isAdmin = await RolesContract.isSuperAdmin(walletAddress);
+        const isElectionManager = await RolesContract.isElectionManager(walletAddress);
+        const isElectionAuthority = await RolesContract.isElectionAuthority(walletAddress);
+        const isVoter = await RolesContract.isVoter(walletAddress);
+
 
         return res.status(200).json({
             isAdmin: isAdmin,

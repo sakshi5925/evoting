@@ -1,24 +1,18 @@
 import mongoose from "mongoose";
 
-const electionSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: String,
-  description: String,
-  managerAddress: String, // from blockchain
-  contractAddress: String, // deployed Election contract address
-  status: {
+  walletAddress: { type: String, unique: true },
+  AdhaarNumber: { type: String, unique: true },
+  DOB: Date,
+  role: {
     type: String,
-    enum: ["Created", "Registration", "Voting", "Ended", "ResultDeclared"],
-    default: "Created",
-  },
-  startTime: Number, // UNIX timestamp
-  endTime: Number,
-  registrationDeadline: Number,
-  totalVotes: { type: Number, default: 0 },
-  candidates: [{ type: mongoose.Schema.Types.ObjectId, ref: "Candidate" }],
-  blockchainTxHash: String, // optional - creation transaction hash
-  isActive: { type: Boolean, default: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  createdAt: { type: Date, default: Date.now },
+    enum: ["admin", "electionManager", "electionAuthority", "voter"],
+    required: true,
+    default: "user"
+  }
+
+
 });
 
-export default mongoose.model("Election", electionSchema);
+export default mongoose.model("User", userSchema);

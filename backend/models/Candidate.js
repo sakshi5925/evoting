@@ -8,10 +8,10 @@ const candidateSchema = new mongoose.Schema({
   party: String,
   manifesto: String,
   imageHash: String, // IPFS/Arweave hash
-  status: { 
-    type: String, 
-    enum: ["Pending", "Approved", "Rejected"], 
-    default: "Pending" 
+  status: {
+    type: String,
+    enum: ["Pending", "Approved", "Rejected"],
+    default: "Pending"
   },
   voteCount: { type: Number, default: 0 },
   localVotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Vote" }],

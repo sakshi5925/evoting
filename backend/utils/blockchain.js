@@ -16,7 +16,7 @@ const RPC_URL = process.env.SEPOLIA_URL;
 const PRIVATE_KEY = await getKey();
 
 // //Setup provider and wallet (signer)
-// const provider = new ethers.JsonRpcProvider(RPC_URL);
+const provider = new ethers.JsonRpcProvider(RPC_URL);
 // const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
 
@@ -41,12 +41,17 @@ const ElectionFactoryAddress = process.env.ELECTION_FACTORY_CONTRACT;
 // const ElectionFactoryContract = new ethers.Contract(ElectionFactoryAddress, electionFactoryAbi, wallet);
 
 //Log to confirm successful setup
-console.log("Blockchain Connected!");
-console.log("Roles Contract Address:", RolesContract.target);
-console.log("Election Factory Contract Address:", ElectionFactoryContract.target);
-// console.log("electin abi",electionAbi);
+
+const RolesContract = (privateKey) => {
+    const wallet = new ethers.Wallet(privateKey, provider);
+    return new ethers.Contract(RolesAddress, rolesAbi, wallet);
+}
+const ElectionFactoryContract = (privateKey) => {
+    const wallet = new ethers.Wallet(privateKey, provider);
+    return new ethers.Contract(ElectionFactoryAddress, electionFactoryAbi, wallet);
+}
 
 //Export for use in controllers or routes
-export { rolesAbi, electionFactoryAbi, electionAbi, RolesAddress, ElectionFactoryAddress, provider };
+export { rolesAbi, electionFactoryAbi, electionAbi, RolesAddress, ElectionFactoryAddress, provider, RolesContract, ElectionFactoryContract };
 
 
