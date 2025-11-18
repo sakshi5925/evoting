@@ -229,6 +229,8 @@ contract Election is ReentrancyGuard {
         return winnerId;
     }
 
+    // not return properly............
+
     function getResults() external view returns (uint256[] memory ids, string[] memory names, uint256[] memory voteCounts) {
         require(electionInfo.status == ElectionStatus.Ended || electionInfo.status == ElectionStatus.ResultDeclared, "Results not available yet");
 

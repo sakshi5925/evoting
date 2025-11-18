@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const candidateSchema = new mongoose.Schema({
   election: { type: mongoose.Schema.Types.ObjectId, ref: "Election" },
-  blockchainId: Number, // ID assigned on-chain
-  walletAddress: String,
+  candidateId: { type: Number, required: true ,unique:true},
+  candidateAddress: String,
   name: String,
   party: String,
   manifesto: String,
@@ -14,8 +14,7 @@ const candidateSchema = new mongoose.Schema({
     default: "Pending"
   },
   voteCount: { type: Number, default: 0 },
-  localVotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Vote" }],
-  updatedAt: { type: Date, default: Date.now },
+
 });
 
 export default mongoose.model("Candidate", candidateSchema);

@@ -58,6 +58,7 @@ contract ElectionFactory {
     }
 
     function createElection(
+        address _electionManager,
         string memory _name,
         string memory _description,
         uint256 _startTime,
@@ -74,7 +75,7 @@ contract ElectionFactory {
 
         Election newElection = new Election(
             address(roles),
-            msg.sender,
+            _electionManager,
             _name,
             _description,
             _startTime,
@@ -87,7 +88,7 @@ contract ElectionFactory {
         elections[electionAddress] = ElectionMetadata({
             id: newElectionId,
             electionAddress: electionAddress,
-            creator: msg.sender,
+            creator: _electionManager,
             name: _name,
             description: _description,
             startTime: _startTime,
@@ -96,14 +97,14 @@ contract ElectionFactory {
             isActive: true
         });
 
-        managerElections[msg.sender].push(electionAddress);
+        managerElections[_electionManager].push(electionAddress);
         allElectionAddresses.push(electionAddress);
         isElectionContract[electionAddress] = true;
 
         emit ElectionCreated(
             newElectionId,
             electionAddress,
-            msg.sender,
+            _electionManager,
             _name,
             _startTime,
             _endTime
