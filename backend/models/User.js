@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   DOB: Date,
   role: {
     type: String,
-    enum: ["admin", "electionManager", "electionAuthority", "voter"],
+    enum: ["user","admin", "electionManager", "electionAuthority", "voter"],
     required: true,
     default: "user"
   }

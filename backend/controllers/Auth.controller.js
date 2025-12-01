@@ -1,10 +1,10 @@
-import { User } from "../models/User.js";
+import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
     try {
-        const { name, walletAddress, AdhaarNumber, DOB, role } = req.body;
+        const { name, walletAddress, AdhaarNumber, DOB} = req.body;
 
 
         const existingUser = await User.findOne({
@@ -27,7 +27,6 @@ export const registerUser = async (req, res) => {
             walletAddress,
             AdhaarNumber: Adharhash,
             DOB,
-            role
         });
 
         await newUser.save();
@@ -60,7 +59,7 @@ export const loginUser = async (req, res) => {
             { expiresIn: "1h" }
         );
 
-        return res.status(200).json({ token: token, name: user.name, role: user.role, walletAddress: walletAddress, AdhaarNumber: AdhaarNumber, DOB: user.DOB });
+        return res.status(200).json({ token: token, name: user.name, role: user.role, walletAddress: walletAddress,DOB: user.DOB });
 
     }
     catch (error) {

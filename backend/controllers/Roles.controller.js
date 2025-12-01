@@ -1,20 +1,20 @@
 import { ethers } from "ethers";
 import { rolesAbi, RolesAddress, provider, RolesContract } from "../utils/blockchain.js";
-import {User} from "../models/User.js";
+import User  from "../models/User.js";
 
-export const AssignRole = async function (res, req) {
+export const AssignRole = async function (req, res) {
     try {
 
-        const { privateKey, walletAddress, role, name, DOB, AdhaarNumber } = req.body;
+        const { privateKey, walletAddress, role } = req.body;
 
         if (!privateKey) {
             return res.status(400).json({ message: "Private key is required" });
 
         }
 
-        console.log("User private key:", privateKey);
-        console.log("User address:", walletAddress);
-        console.log("Role:", role);
+        // console.log("User private key:", privateKey);
+        // console.log("User address:", walletAddress);
+        // console.log("Role:", role);
 
         const RoleContract = RolesContract(privateKey);
 
@@ -40,16 +40,15 @@ export const AssignRole = async function (res, req) {
         }
         await tx.wait();
         console.log(`${role} role assigned to ${walletAddress}`);
-        
+
         const user = await User.findOne({ walletAddress });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        user.set({ role: role });
+
+        user.role = role;
         await user.save();
-
-
 
         return res.status(200).json({ message: `${role} assigned to ${walletAddress}` });
 
@@ -62,7 +61,7 @@ export const AssignRole = async function (res, req) {
 
 }
 
-export const removeRole = async function (res, req) {
+export const removeRole = async function (req, res) {
 
     try {
         const { privateKey, walletAddress, role } = req.body;
@@ -71,38 +70,36 @@ export const removeRole = async function (res, req) {
             return res.status(400).json({ message: "Private key is required" });
         }
 
-        const wallet = new ethers.Wallet(privateKey, provider);
-
-        const RolesContract = new ethers.Contract(RolesAddress, rolesAbi, wallet);
+        const RoleContract = RolesContract(privateKey);
 
         let tx;
 
         switch (role) {
             case "admin":
-                tx = await RolesContract.removeSuperAdmin(walletAddress);
+                tx = await RoleContract.removeSuperAdmin(walletAddress);
                 break;
             case "electionManager":
-                tx = await RolesContract.removeElectionManager(walletAddress);
+                tx = await RoleContract.removeElectionManager(walletAddress);
                 break;
             case "electionAuthority":
-                tx = await RolesContract.removeElectionAuthority(walletAddress);
+                tx = await RoleContract.removeElectionAuthority(walletAddress);
                 break;
             case "voter":
-                tx = await RolesContract.removeVoter(walletAddress);
+                tx = await RoleContract.removeVoter(walletAddress);
                 break;
-            default:
-                return res.status(400).json({ message: "Invalid role" });
         }
+
         await tx.wait();
+
         console.log(`${role} role removed from ${walletAddress}`);
-        
+
         const user = await User.findOne({ walletAddress });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        user.set({ role: user });
+        user.role = "user";
         await user.save();
 
         return res.status(200).json({ message: `${role} removed from ${walletAddress}` });
@@ -116,7 +113,7 @@ export const removeRole = async function (res, req) {
 
 }
 
-export const checkRoles = async function (res, req) {
+export const checkRoles = async function (req, res) {
 
     try {
         const { walletAddress } = req.body;

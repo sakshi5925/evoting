@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const electionSchema = new mongoose.Schema({
-  name: String,
+  ElectionName: String,
   description: String,
   managerAddress: String,
   contractAddress: {type: String, unique: true},

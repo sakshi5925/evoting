@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { getKey } from "../controllers/Roles.controller";
+
 //Load environment variables from .env
 dotenv.config();
 
@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 
 //Load environment variables
 const RPC_URL = process.env.SEPOLIA_URL;
-const PRIVATE_KEY = await getKey();
+
 
 // //Setup provider and wallet (signer)
 const provider = new ethers.JsonRpcProvider(RPC_URL);
