@@ -9,6 +9,9 @@ import {
     ElectionFactoryReadOnly
 } from "../utils/blockchain.js";
 
+
+// create election
+
 export const createElection = async (req, res) => {
     try {
         const {
@@ -56,7 +59,6 @@ export const createElection = async (req, res) => {
         const startTime = bnToNumber(rawStartTime);
         const endTime = bnToNumber(rawEndTime);
 
-        // Save to DB — include registrationDeadline (it was passed to contract)
         const newElection = new Election({
             electionId,
             name: rawName || ElectionName,
@@ -87,7 +89,7 @@ export const createElection = async (req, res) => {
     }
 };
 
-
+//deactivate election
 
 export const deactivateElection = async (req, res) => {
     try {
@@ -111,7 +113,7 @@ export const deactivateElection = async (req, res) => {
 };
 
 
-
+//reactivate election
 
 export const reactivateElection = async (req, res) => {
     try {
@@ -133,6 +135,8 @@ export const reactivateElection = async (req, res) => {
     }
 };
 
+
+//get election by address
 
 export const getElectionByAddress = async (req, res) => {
     try {
@@ -168,6 +172,9 @@ export const getElectionByAddress = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+
+// startCandidateRegistration, startVoting, endElection, declareResults, changeStatus
 
 const getSignedElectionContract = (privateKey, electionAddress) => {
     const wallet = new ethers.Wallet(privateKey, provider);
@@ -277,6 +284,7 @@ export const _changeStatus = async function (req, res) {
     }
 };
 
+// register candidate
 
 export const registerCandidate = async function (req, res) {
     try {
@@ -344,6 +352,8 @@ export const registerCandidate = async function (req, res) {
 
 }
 
+//validate candidate
+
 export const validateCandidate = async function (req, res) {
     try {
         const { privateKey, electionAddress, candidateAddress, isValid, candidateId } = req.body;
@@ -374,6 +384,8 @@ export const validateCandidate = async function (req, res) {
     }
 }
 
+
+//castVote 
 
 export const castVote = async function (req, res) {
 
@@ -429,6 +441,7 @@ export const castVote = async function (req, res) {
     }
 }
 
+//getWinner
 
 export const getWinner = async function (req, res) {
     try {
@@ -469,7 +482,7 @@ export const getWinner = async function (req, res) {
     }
 }
 
-
+//getCandidateDetails
 
 export const getCandidateDetails = async function (req, res) {
     try {
@@ -505,6 +518,7 @@ export const getCandidateDetails = async function (req, res) {
     }
 }
 
+//getPendingCandidates
 
 export const getPendingCandidates = async function (req, res) {
     try {
@@ -539,6 +553,8 @@ export const getPendingCandidates = async function (req, res) {
     }
 }
 
+//getVoterStatus
+
 export const getVoterStatus = async function (req, res) {
     try {
 
@@ -571,6 +587,8 @@ export const getVoterStatus = async function (req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+//getElectionInfo
 
 export const getElectionInfo = async function (req, res) {
     try {
@@ -605,6 +623,7 @@ export const getElectionInfo = async function (req, res) {
     }
 }
 
+//isVoterRole
 
 export const isVoterRole = async function (req, res) {
     try {
@@ -633,6 +652,8 @@ export const isVoterRole = async function (req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+//getTotalCandidates
 
 export const getTotalCandidates = async function (req, res) {
     try {
