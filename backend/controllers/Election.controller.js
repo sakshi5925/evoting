@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { Election } from "../models/Election.js";
 import { Candidate } from "../models/Candidate.js";
+import { bnToNumber, normalizeAddress } from "../utils/helpers.js";
 import {
     ElectionFactoryAddress,
     electionAbi,
@@ -80,7 +81,8 @@ export const createElection = async (req, res) => {
 
         return res.status(201).json({
             message: "Election created successfully",
-            electionAddress: electionAddr
+            electionAddress: electionAddress,
+            electionId: electionId
         });
 
     } catch (error) {
@@ -264,7 +266,7 @@ export const declareResults = async function (req, res) {
 };
 
 
-export const _changeStatus = async function (req, res) {
+export const changeStatus = async function (req, res) {
     try {
         const { electionAddress, status, privateKey } = req.body;
 
@@ -653,7 +655,7 @@ export const isVoterRole = async function (req, res) {
     }
 }
 
-//getTotalCandidates
+//getTotalCandidates    
 
 export const getTotalCandidates = async function (req, res) {
     try {
