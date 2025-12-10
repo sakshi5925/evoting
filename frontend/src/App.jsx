@@ -1,10 +1,52 @@
-import  React from 'react';  
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+
+import { connectWallet, logoutUser } from "./redux/slices/authSlice";
 
 export default function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Restore wallet on reload
+    dispatch(connectWallet());
+
+    // Listen to MetaMask events
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", (accounts) => {
+        if (accounts.length === 0) {
+          dispatch(logoutUser()); // clear everything
+        } else {
+          // Reconnect the new account
+          dispatch(connectWallet());
+        }
+      });
+
+      window.ethereum.on("chainChanged", () => {
+        // Simply reload the page on network change
+        window.location.reload();
+      });
+    }
+
+    // Cleanup listeners on unmount
+    return () => {
+      if (window.ethereum && window.ethereum.removeListener) {
+        window.ethereum.removeListener("accountsChanged", () => {});
+        window.ethereum.removeListener("chainChanged", () => {});
+      }
+    };
+  }, [dispatch]);
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <h1 className="text-4xl font-bold mb-4 text-blue-600">Welcome to SecureVote</h1>
-      <p className="text-lg text-gray-700">Your secure and transparent e-voting platform.</p>
-    </div>
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
