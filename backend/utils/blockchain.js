@@ -51,7 +51,12 @@ const ElectionFactoryContract = (privateKey) => {
     return new ethers.Contract(ElectionFactoryAddress, electionFactoryAbi, wallet);
 }
 
+const ElectionFactoryReadOnly = () => {
+    return new ethers.Contract(ElectionFactoryAddress, electionFactoryAbi, provider);
+};
+
+
 //Export for use in controllers or routes
-export { rolesAbi, electionFactoryAbi, electionAbi, RolesAddress, ElectionFactoryAddress, provider, RolesContract, ElectionFactoryContract };
+export { rolesAbi, electionFactoryAbi, electionAbi, RolesAddress, ElectionFactoryAddress, provider, RolesContract, ElectionFactoryContract, ElectionFactoryReadOnly };
 
 

@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
     try {
-        const { name, walletAddress, AdhaarNumber, DOB} = req.body;
+        const { name, walletAddress, AdhaarNumber, DOB , VoterID} = req.body;
 
 
         const existingUser = await User.findOne({
@@ -27,11 +27,12 @@ export const registerUser = async (req, res) => {
             walletAddress,
             AdhaarNumber: Adharhash,
             DOB,
+            VoterID
         });
 
         await newUser.save();
 
-        return res.status(201).json({ message: "User registered successfully" });
+        return res.status(201).json({ message: "User registered successfully" , user: { name: newUser.name, walletAddress: newUser.walletAddress, DOB: newUser.DOB, role: newUser.role , VoterID: newUser.VoterID } });
     }
     catch (error) {
         console.error("Error registering user:", error);
@@ -59,7 +60,7 @@ export const loginUser = async (req, res) => {
             { expiresIn: "1h" }
         );
 
-        return res.status(200).json({ token: token, name: user.name, role: user.role, walletAddress: walletAddress,DOB: user.DOB });
+        return res.status(200).json({ token: token, name: user.name, role: user.role, walletAddress: walletAddress,DOB: user.DOB , VoterID: user.VoterID });
 
     }
     catch (error) {

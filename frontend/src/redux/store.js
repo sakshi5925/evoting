@@ -14,11 +14,15 @@ import { persistReducer, persistStore } from "redux-persist";
 
 
 import authReducer from './slices/authSlice';
+import electionReducer from './slices/electionSlice';
+import roleReducer from './slices/roleSlice';
 
 
 // combine reducers
 const rootReducer = combineReducers({
   auth: authReducer,
+  election: electionReducer,
+  role: roleReducer
 });
 
 

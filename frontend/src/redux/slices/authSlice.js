@@ -8,10 +8,8 @@ const initialState = {
   walletAddress: null,
   chainId: null,
   isWalletConnected: false,
-  status: "idle",   // idle | loading | connected | error
   token: null,
-  user: null,  
-  isLoggedIn: false,
+  user:null,  
   error: null,
   isLoading: false,
 };
@@ -53,13 +51,14 @@ export const connectWallet = createAsyncThunk(
 // Register user
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
-  async ({ name, walletAddress, AdhaarNumber, DOB }, { rejectWithValue }) => {
+  async ({ name, walletAddress, AdhaarNumber, DOB , VoterID}, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_BASE}/auth/register`, {
         name,
         walletAddress,
         AdhaarNumber,
-        DOB,
+        VoterID,
+        DOB
       });
       return response.data;
     } catch (err) {
@@ -68,6 +67,21 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+// Login user
+export const loginUser = createAsyncThunk(
+  "auth/loginUser",
+  async ({ walletAddress, AdhaarNumber }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_BASE}/auth/login`, {
+        walletAddress,
+        AdhaarNumber,
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
 
 
 // ---------------------------
@@ -83,8 +97,6 @@ const authSlice = createSlice({
       state.isWalletConnected = false;
       state.token = null;
       state.user = null;
-      state.isLoggedIn = false;
-      state.status = "idle";
       state.error = null;
       state.isLoading = false;
     },
@@ -105,11 +117,9 @@ const authSlice = createSlice({
         state.walletAddress = action.payload.walletAddress;
         state.chainId = action.payload.chainId;
         state.isWalletConnected = true;
-        state.status = "connected";
         state.isLoading = false;
       })
       .addCase(connectWallet.rejected, (state, action) => {
-        state.status = "error";
         state.error = action.payload;
         state.isLoading = false;
       })
@@ -118,12 +128,27 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
+        state.user = action.payload.user;
         state.isLoading = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-      }); 
+      })
+      .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.token = action.payload.token;
+        state.user = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      });
+
   },
 });
 

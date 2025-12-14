@@ -1,9 +1,14 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/layouts/Navbar";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
+import Registration from "./components/auth/registration";
+import Login from "./components/auth/login";
+import CreateElection from "./components/election/createElection";
+import ManageUsers from "./components/election/ManageUser";
+import ElectionsPage from "./pages/ElectionsPage";
+import ElectionDetailPage from "./pages/ElectionDetailPage";
 
 import { connectWallet, logoutUser } from "./redux/slices/authSlice";
 
@@ -45,7 +50,12 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/register" element={<Registration />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/create-election" element={<CreateElection />} />
+        <Route path="/manage-users" element={<ManageUsers />} />
+        <Route path="/elections" element={<ElectionsPage />} />
+          <Route path="/election/:id" element={<ElectionDetailPage />} />
       </Routes>
     </BrowserRouter>
   );

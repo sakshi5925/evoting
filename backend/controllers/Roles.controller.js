@@ -138,3 +138,24 @@ export const checkRoles = async function (req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+export const ElectionManagersList = async function (req, res) {
+    try{
+        const electionManagers = await User.find({ role: "electionManager" });
+        return res.status(200).json(electionManagers);
+    }
+    catch (error) {
+        console.error("Error fetching election managers:", error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+export const getAllUsers = async function (req, res) {
+    try {
+        const users = await User.find({});
+        return res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ error: error.message });
+    }
+}

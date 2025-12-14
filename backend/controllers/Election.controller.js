@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { Election } from "../models/Election.js";
-import { Candidate } from "../models/Candidate.js";
+import  Election  from "../models/Election.js";
+import  Candidate  from "../models/Candidate.js";
 import { bnToNumber, normalizeAddress } from "../utils/helpers.js";
 import {
     ElectionFactoryAddress,

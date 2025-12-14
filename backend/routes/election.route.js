@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { createElection,deactivateElection,reactivateElection,getElectionByAddress,startCandidateRegistration,startVoting,endElection, declareResults,changeStatus,registerCandidate,validateCandidate,castVote,getWinner,getCandidateDetails,getPendingCandidates,getVoterStatus,getElectionInfo,isVoterRole,getTotalCandidates } from "../controllers/Election.controller";
+import { createElection,deactivateElection,reactivateElection,getElectionByAddress,startCandidateRegistration,startVoting,endElection, declareResults,changeStatus,registerCandidate,validateCandidate,castVote,getWinner,getCandidateDetails,getPendingCandidates,getVoterStatus,getElectionInfo,isVoterRole,getTotalCandidates } from "../controllers/Election.controller.js";
 
 const electionRouter = Router();
 
