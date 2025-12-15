@@ -6,10 +6,10 @@ import sampleElections from "../data/sampleElections";
 
 const ElectionsPage = () => {
   const navigate = useNavigate();
-  const { elections, isLoading, error } = useSelector((state) => state.election);
+  const { allelections, isLoading, error } = useSelector((state) => state.election);
   const { user } = useSelector((state) => state.auth);
 
-  const electionList = elections.length === 0 ? sampleElections : elections;
+  const electionList = allelections.length === 0 ? sampleElections : allelections;
   const now = new Date();
 
   const upcoming = electionList.filter((e) => new Date(e.ElectionStartTime) > now);
