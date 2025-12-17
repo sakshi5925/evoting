@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import  Election  from "../models/Election.js";
-import  Candidate  from "../models/Candidate.js";
+import Election from "../models/Election.js";
+import Candidate from "../models/Candidate.js";
 import { bnToNumber, normalizeAddress } from "../utils/helpers.js";
 import {
     ElectionFactoryAddress,
@@ -10,6 +10,7 @@ import {
     ElectionFactoryReadOnly
 } from "../utils/blockchain.js";
 
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 // create election
 
@@ -25,10 +26,16 @@ export const createElection = async (req, res) => {
             electionManager
         } = req.body;
 
-        if (!privateKey) return res.status(400).json({ message: "Private key is required" });
-        if (!ElectionName) return res.status(400).json({ message: "Election name is required" });
-        if (!electionManager) return res.status(400).json({ message: "Election manager address required" });
+        if (!privateKey)
+            return res.status(400).json({ message: "Private key is required" });
 
+        if (!ElectionName)
+            return res.status(400).json({ message: "Election name is required" });
+
+        if (!electionManager)
+            return res.status(400).json({ message: "Election manager address required" });
+
+        // ⛓️ Create on-chain
         const electionFactory = ElectionFactoryContract(privateKey);
 
         const tx = await electionFactory.createElection(
@@ -42,47 +49,64 @@ export const createElection = async (req, res) => {
 
         const receipt = await tx.wait();
 
-        const event = receipt.events.find(e => e.event === "ElectionCreated");
-        if (!event) return res.status(500).json({ message: "ElectionCreated event not found" });
+        // 🧠 Parse ONLY address/id from factory event
+        const parsedLogs = receipt.logs
+            .map(log => {
+                try {
+                    return electionFactory.interface.parseLog(log);
+                } catch {
+                    return null;
+                }
+            })
+            .filter(Boolean);
 
-        const [
-            rawElectionId,
-            rawElectionAddress,
-            rawCreator,
-            rawName,
-            rawStartTime,
-            rawEndTime
-        ] = event.args;
+        const createdEvent = parsedLogs.find(
+            e => e.name === "ElectionCreated"
+        );
 
-        const electionId = bnToNumber(rawElectionId);
-        const electionAddress = normalizeAddress(rawElectionAddress);
-        const creator = normalizeAddress(rawCreator);
-        const startTime = bnToNumber(rawStartTime);
-        const endTime = bnToNumber(rawEndTime);
+        if (!createdEvent) {
+            return res.status(500).json({ message: "ElectionCreated event not found" });
+        }
+
+        const electionAddress = normalizeAddress(createdEvent.args.electionAddress);
+
+        // ✅ USE REQUEST TIMES (already validated by Solidity)
+        const startTime = Number(ElectionStartTime);
+        const endTime = Number(ElectionEndTime);
+        const regDeadline = Number(registrationDeadline);
+
+        if (
+            !Number.isFinite(startTime) ||
+            !Number.isFinite(endTime) ||
+            !Number.isFinite(regDeadline)
+        ) {
+            return res.status(400).json({ message: "Invalid timestamps" });
+        }
 
         const newElection = new Election({
-            electionId,
-            name: rawName || ElectionName,
+            name: ElectionName,
             description: description || "",
-            managerAddress: creator,
+            managerAddress: normalizeAddress(electionManager),
             contractAddress: electionAddress,
+
             startTime,
             endTime,
-            registrationDeadline,
+            registrationDeadline: regDeadline,
+
             startdate: new Date(startTime * 1000),
             enddate: new Date(endTime * 1000),
+
             totalVotes: 0,
             totalCandidates: 0,
             candidates: [],
-            isActive: true,
+            isActive: true
         });
 
         await newElection.save();
 
         return res.status(201).json({
             message: "Election created successfully",
-            electionAddress: electionAddress,
-            electionId: electionId
+            electionAddress
         });
 
     } catch (error) {
@@ -90,6 +114,8 @@ export const createElection = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+
 
 //deactivate election
 
@@ -681,3 +707,85 @@ export const getTotalCandidates = async function (req, res) {
     }
 }
 
+// get upcoming elections 
+
+export const getUpcomingElections = async (req, res) => {
+    try {
+        const now = Math.floor(Date.now() / 1000);
+
+        const elections = await Election.find({
+            startTime: { $gt: now },
+            isActive: true
+        }).sort({ startTime: 1 });
+
+        return res.status(200).json({
+            success: true,
+            elections
+        });
+    } catch (error) {
+        console.error("Error fetching upcoming elections:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+//get ongoing elections
+
+export const getOngoingElections = async (req, res) => {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+
+    const elections = await Election.find({
+      startTime: { $lte: now },
+      endTime: { $gte: now },
+      status: "Voting",
+      isActive: true
+    }).sort({ startTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      elections
+    });
+  } catch (error) {
+    console.error("Error fetching ongoing elections:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+//get past elections
+
+export const getCompletedElections = async (req, res) => {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+
+    const elections = await Election.find({
+      $or: [
+        { endTime: { $lt: now } },
+        { status: { $in: ["Ended", "ResultDeclared"] } }
+      ]
+    }).sort({ endTime: -1 });
+
+    return res.status(200).json({
+      success: true,
+      elections
+    });
+  } catch (error) {
+    console.error("Error fetching completed elections:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+//get all elections
+
+export const getAllElections = async (req, res) => {
+    try {
+        const elections = await Election.find().sort({ startTime: -1 });
+
+        return res.status(200).json({
+            success: true,
+            elections
+        });
+    } catch (error) {
+        console.error("Error fetching all elections:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};

@@ -2,14 +2,14 @@ import { ethers } from "ethers";
 import { rolesAbi, RolesAddress, provider, RolesContract } from "../utils/blockchain.js";
 import User  from "../models/User.js";
 
+
 export const AssignRole = async function (req, res) {
     try {
 
-        const { privateKey, walletAddress, role } = req.body;
-
+        const {walletAddress, role } = req.body;
+        const privateKey =process.env.PRIVATE_KEY;
         if (!privateKey) {
             return res.status(400).json({ message: "Private key is required" });
-
         }
 
         // console.log("User private key:", privateKey);
@@ -39,7 +39,7 @@ export const AssignRole = async function (req, res) {
 
         }
         await tx.wait();
-        console.log(`${role} role assigned to ${walletAddress}`);
+        console.log(tx);
 
         const user = await User.findOne({ walletAddress });
 
@@ -49,6 +49,7 @@ export const AssignRole = async function (req, res) {
 
         user.role = role;
         await user.save();
+        console.log(`${role} role assigned to ${user.role}`);
 
         return res.status(200).json({ message: `${role} assigned to ${walletAddress}` });
 
@@ -113,39 +114,44 @@ export const removeRole = async function (req, res) {
 
 }
 
-export const checkRoles = async function (req, res) {
+export const checkRoles = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
 
-    try {
-        const { walletAddress } = req.body;
+    console.log("Checking roles (DB) for wallet:", walletAddress);
 
-        const RolesContract = new ethers.Contract(RolesAddress, rolesAbi, provider);
-
-        const isAdmin = await RolesContract.isSuperAdmin(walletAddress);
-        const isElectionManager = await RolesContract.isElectionManager(walletAddress);
-        const isElectionAuthority = await RolesContract.isElectionAuthority(walletAddress);
-        const isVoter = await RolesContract.isVoter(walletAddress);
-
-
-        return res.status(200).json({
-            isAdmin: isAdmin,
-            isElectionManager: isElectionManager,
-            isElectionAuthority: isElectionAuthority,
-            isVoter: isVoter
-        });
+    if (!walletAddress || typeof walletAddress !== "string") {
+      return res.status(400).json({ message: "Invalid wallet address" });
     }
-    catch (error) {
-        console.error("Error checking role:", error);
-        return res.status(500).json({ error: error.message });
+
+    const user = await User.findOne({ walletAddress });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-}
+
+    return res.status(200).json({
+      role: user.role || "user",
+      isAdmin: user.role === "admin",
+      isElectionManager: user.role === "electionManager",
+      isElectionAuthority: user.role === "electionAuthority",
+      isVoter: user.role === "voter",
+    });
+
+  } catch (error) {
+    console.error("Error checking role from DB:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 export const ElectionManagersList = async function (req, res) {
     try{
         const electionManagers = await User.find({ role: "electionManager" });
+        // console.log("Election Managers List:", electionManagers);
         return res.status(200).json(electionManagers);
     }
     catch (error) {
-        console.error("Error fetching election managers:", error);
+        // console.error("Error fetching election managers:", error);
         return res.status(500).json({ error: error.message });
     }
 }

@@ -1,8 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { getUpcomingElections } from "../../../redux/slices/electionSlice";
 
-const CompletedElectionDetail = ({ election }) => {
+const CompletedElectionDetail = ({}) => {
   const navigate = useNavigate();
+
   const start = new Date(election.ElectionStartTime);
   const end = new Date(election.ElectionEndTime);
 

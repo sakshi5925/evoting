@@ -7,6 +7,7 @@ import electionRouter from "./routes/election.route.js";
 import roleRouter from "./routes/role.route.js";
 
 
+
 // Load environment variables and connect to the database
 dotenv.config();
 connectDB();

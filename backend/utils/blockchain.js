@@ -16,7 +16,19 @@ const RPC_URL = process.env.SEPOLIA_URL;
 
 
 // //Setup provider and wallet (signer)
-const provider = new ethers.JsonRpcProvider(RPC_URL);
+const provider = new ethers.JsonRpcProvider(
+    RPC_URL,
+    {
+        name: "sepolia",
+        chainId: 11155111,
+    },
+    {
+        timeout: 20000, // 20 seconds
+    }
+);
+
+
+
 // const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
 
