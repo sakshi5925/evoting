@@ -3,11 +3,11 @@ import { useDispatch } from "react-redux";
 import { connectWallet, registerUser } from "../../redux/slices/authSlice";
 import { FaWallet } from "react-icons/fa";
 import { MdFingerprint, MdPerson, MdHowToVote } from "react-icons/md";
-
+import { useNavigate } from "react-router-dom";
 export default function Registration() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate();
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -32,6 +32,7 @@ export default function Registration() {
 
       alert("Registration Successful!");
       e.target.reset();
+      navigate("/login");
     } catch (error) {
       console.error("Error registering user:", error);
       alert("Registration failed. Try again.");

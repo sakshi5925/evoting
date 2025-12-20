@@ -23,7 +23,7 @@ export const registerUser = async (req, res) => {
         const Adharhash = await bcrypt.hash(AdhaarNumber, saltRounds);
 
         const newUser = new User({
-            name,
+            name,   
             walletAddress,
             AdhaarNumber: Adharhash,
             DOB,

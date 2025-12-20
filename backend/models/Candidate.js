@@ -1,20 +1,36 @@
 import mongoose from "mongoose";
 
 const candidateSchema = new mongoose.Schema({
-  election: { type: mongoose.Schema.Types.ObjectId, ref: "Election" },
-  candidateId: { type: Number, required: true ,unique:true},
-  candidateAddress: String,
+  electionAddress: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  candidateId: {
+    type: Number,
+    required: true,
+  },
+  candidateAddress: {
+    type: String,
+    required: true,
+    index: true,
+  },
   name: String,
   party: String,
-  manifesto: String,
-  imageHash: String, // IPFS/Arweave hash
   status: {
     type: String,
     enum: ["Pending", "Approved", "Rejected"],
-    default: "Pending"
+    default: "Pending",
   },
-  voteCount: { type: Number, default: 0 },
+  voteCount: {
+    type: Number,
+    default: 0,
+  },
+}, { timestamps: true });
 
-});
+candidateSchema.index(
+  { electionAddress: 1, candidateAddress: 1 },
+  { unique: true }
+);
 
 export default mongoose.model("Candidate", candidateSchema);

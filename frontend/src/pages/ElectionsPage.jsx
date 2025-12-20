@@ -37,23 +37,26 @@ const ElectionsPage = () => {
           Elections Overview
         </h1>
 
-        {user?.role === "admin" && (
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate("/manage-users")}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600"
-            >
-              Manage Users
-            </button>
-
-            <button
-              onClick={() => navigate("/create-election")}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600"
-            >
-              + Create Election
-            </button>
-          </div>
+        {/* Manage Users → Admin + Manager + Authority */}
+        {["SUPER_ADMIN", "ELECTION_MANAGER", "ELECTION_AUTHORITY"].includes(user?.role) && (
+          <button
+            onClick={() => navigate("/manage-users")}
+            className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600"
+          >
+            Manage Users
+          </button>
         )}
+
+        {/* Create Election → ONLY Super Admin */}
+        {user?.role === "SUPER_ADMIN" && (
+          <button
+            onClick={() => navigate("/create-election")}
+            className="px-5 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600"
+          >
+            + Create Election
+          </button>
+        )}
+
       </div>
 
       {isLoading && <p className="text-center">Loading...</p>}

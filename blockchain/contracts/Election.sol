@@ -17,11 +17,9 @@ contract Election is ReentrancyGuard {
         address candidateAddress;
         string name;
         string party;
-        string manifesto;
-        string imageHash;
         CandidateStatus status;
         uint256 voteCount;
-        bool exists;
+        bool exists;        
     }
     
     // struct VoterInfo {
@@ -32,7 +30,7 @@ contract Election is ReentrancyGuard {
     // }
     
     struct ElectionInfo {
-        string name;
+        string electionName;
         string description;
         uint256 startTime;
         uint256 endTime;
@@ -52,13 +50,13 @@ contract Election is ReentrancyGuard {
     
     uint256[] public candidateIds;
 
-    event ElectionCreated(string name, uint256 startTime, uint256 endTime);
+    event ElectionCreated(string electionName, uint256 startTime, uint256 endTime, ElectionStatus status);
     event ElectionStatusChanged(ElectionStatus oldStatus, ElectionStatus newStatus);
     event CandidateRegistered(uint256 indexed candidateId, address indexed candidateAddress, string name);
     event CandidateValidated(uint256 indexed candidateId, CandidateStatus status);
     event VoterRegistered(address indexed voter);
-    event VoteCasted(address indexed voter, uint256 indexed candidateId);
-    event ResultDeclared(uint256 winnerCandidateId, uint256 totalVotes);
+    event VoteCasted(address indexed voter, uint indexed candidateId);
+    event ResultDeclared(uint indexed winnerCandidateId, uint256 totalVotes);
 
     modifier onlyElectionManager() {
         require(msg.sender == electionManager, "Only election manager");
@@ -103,7 +101,7 @@ contract Election is ReentrancyGuard {
         electionManager = _electionManager;
         
         electionInfo = ElectionInfo({
-            name: _name,
+            electionName: _name,
             description: _description,
             startTime: _startTime,
             endTime: _endTime,
@@ -114,7 +112,7 @@ contract Election is ReentrancyGuard {
         });
 
         candidateIdCounter = 0;
-        emit ElectionCreated(_name, _startTime, _endTime);
+        emit ElectionCreated(_name, _startTime, _endTime,electionInfo.status);
     }
 
     function startCandidateRegistration() external onlyElectionManager inStatus(ElectionStatus.Created) {
@@ -139,7 +137,7 @@ contract Election is ReentrancyGuard {
         emit ResultDeclared(winnerId, electionInfo.totalVotes);
     }
 
-    function _changeStatus(ElectionStatus newStatus) private {
+    function _changeStatus(ElectionStatus newStatus) private onlyElectionManager {
         ElectionStatus oldStatus = electionInfo.status;
         electionInfo.status = newStatus;
         emit ElectionStatusChanged(oldStatus, newStatus);
@@ -147,23 +145,18 @@ contract Election is ReentrancyGuard {
 
     function registerCandidate(
         string memory _name,
-        string memory _party,
-        string memory _manifesto,
-        string memory _imageHash
+        string memory _party
     ) external inStatus(ElectionStatus.Registration) {
         require(block.timestamp < electionInfo.registrationDeadline, "Registration closed");
         require(candidateAddressToId[msg.sender] == 0, "Already registered");
         require(bytes(_name).length > 0, "Name required");
         require(bytes(_party).length > 0, "Party required");
-
         candidateIdCounter++;
         candidates[candidateIdCounter] = Candidate({
             id: candidateIdCounter,
             candidateAddress: msg.sender,
             name: _name,
             party: _party,
-            manifesto: _manifesto,
-            imageHash: _imageHash,
             status: CandidateStatus.Pending,
             voteCount: 0,
             exists: true
@@ -229,7 +222,7 @@ contract Election is ReentrancyGuard {
         return winnerId;
     }
 
-    // not return properly............
+  
 
     function getResults() external view returns (uint256[] memory ids, string[] memory names, uint256[] memory voteCounts) {
         require(electionInfo.status == ElectionStatus.Ended || electionInfo.status == ElectionStatus.ResultDeclared, "Results not available yet");
@@ -255,62 +248,62 @@ contract Election is ReentrancyGuard {
         }
     }
 
-    function getCandidateDetails(uint256 _candidateId) external view returns (Candidate memory) {
-        require(candidates[_candidateId].exists, "Candidate not found");
-        return candidates[_candidateId];
-    }
+    // function getCandidateDetails(uint256 _candidateId) external view returns (Candidate memory) {
+    //     require(candidates[_candidateId].exists, "Candidate not found");
+    //     return candidates[_candidateId];
+    // }
 
-    function getAllApprovedCandidates() external view returns (Candidate[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].status == CandidateStatus.Approved) count++;
-        }
+    // function getAllApprovedCandidates() external view returns (Candidate[] memory) {
+    //     uint256 count = 0;
+    //     for (uint256 i = 0; i < candidateIds.length; i++) {
+    //         if (candidates[candidateIds[i]].status == CandidateStatus.Approved) count++;
+    //     }
 
-        Candidate[] memory approved = new Candidate[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].status == CandidateStatus.Approved) {
-                approved[index++] = candidates[candidateIds[i]];
-            }
-        }
-        return approved;
-    }
+    //     Candidate[] memory approved = new Candidate[](count);
+    //     uint256 index = 0;
+    //     for (uint256 i = 0; i < candidateIds.length; i++) {
+    //         if (candidates[candidateIds[i]].status == CandidateStatus.Approved) {
+    //             approved[index++] = candidates[candidateIds[i]];
+    //         }
+    //     }
+    //     return approved;
+    // }
 
-    function getPendingCandidates() external view returns (Candidate[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].status == CandidateStatus.Pending) count++;
-        }
+    // function getPendingCandidates() external view returns (Candidate[] memory) {
+    //     uint256 count = 0;
+    //     for (uint256 i = 0; i < candidateIds.length; i++) {
+    //         if (candidates[candidateIds[i]].status == CandidateStatus.Pending) count++;
+    //     }
 
-        Candidate[] memory pending = new Candidate[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].status == CandidateStatus.Pending) {
-                pending[index++] = candidates[candidateIds[i]];
-            }
-        }
-        return pending;
-    }
+    //     Candidate[] memory pending = new Candidate[](count);
+    //     uint256 index = 0;
+    //     for (uint256 i = 0; i < candidateIds.length; i++) {
+    //         if (candidates[candidateIds[i]].status == CandidateStatus.Pending) {
+    //             pending[index++] = candidates[candidateIds[i]];
+    //         }
+    //     }
+    //     return pending;
+    // }
 
-    function getVoterStatus(address _voter) external view returns (bool isRoleVoter, bool hasAlreadyVoted, uint256 votedFor) {
-        isRoleVoter = roles.hasRole(roles.VOTER(), _voter);
-        hasAlreadyVoted = hasVoted[_voter];
-        votedFor = votedCandidateId[_voter];
-    }
+    // function getVoterStatus(address _voter) external view returns (bool isRoleVoter, bool hasAlreadyVoted, uint256 votedFor) {
+    //     isRoleVoter = roles.hasRole(roles.VOTER(), _voter);
+    //     hasAlreadyVoted = hasVoted[_voter];
+    //     votedFor = votedCandidateId[_voter];
+    // }
 
-    function getElectionInfo() external view returns (ElectionInfo memory) {
-        return electionInfo;
-    }
+    // function getElectionInfo() external view returns (ElectionInfo memory) {
+    //     return electionInfo;
+    // }
 
-    function isVoterRole(address _voter) external view returns (bool) {
-        return roles.hasRole(roles.VOTER(), _voter);
-    }
+    // function isVoterRole(address _voter) external view returns (bool) {
+    //     return roles.hasRole(roles.VOTER(), _voter);
+    // }
 
-    function getTotalCandidates() external view returns (uint256) {
-        return candidateIds.length;
-    }
+    // function getTotalCandidates() external view returns (uint256) {
+    //     return candidateIds.length;
+    // }
 
-    function getCandidateIdCounter() external view returns (uint256) {
-        return candidateIdCounter;
-    }
+    // function getCandidateIdCounter() external view returns (uint256) {
+    //     return candidateIdCounter;
+    // }
 }

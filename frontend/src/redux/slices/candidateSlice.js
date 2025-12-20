@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { API_BASE } from "../../config"; // Update as per your project
-
+const API_BASE = "http://localhost:5000/api";
 // Initial state
 const initialState = {
     candidates: [],
@@ -18,10 +17,10 @@ const initialState = {
 // Register candidate
 export const registerCandidate = createAsyncThunk(
     "candidate/registerCandidate",
-    async ({ privateKey, electionAddress, name, party, manifesto, imageHash }, { rejectWithValue }) => {
+    async ({ privateKey, electionAddress, candidateName, party}, { rejectWithValue }) => {
         try {
             const response = await axios.post(`${API_BASE}/election/registerCandidate`, {
-                privateKey, electionAddress, name, party, manifesto, imageHash
+                privateKey, electionAddress, candidateName, party, 
             });
             return response.data;
         } catch (err) {
@@ -33,10 +32,10 @@ export const registerCandidate = createAsyncThunk(
 // Validate candidate
 export const validateCandidate = createAsyncThunk(
     "candidate/validateCandidate",
-    async ({ privateKey, electionAddress, candidateId, isApproved }, { rejectWithValue }) => {
+    async ({ privateKey, electionAddress, candidateId, isValid }, { rejectWithValue }) => {
         try {
             const response = await axios.post(`${API_BASE}/election/validateCandidate`, {
-                privateKey, electionAddress, candidateId, isApproved
+                privateKey, electionAddress, candidateId, isValid
             });
             return response.data;
         } catch (err) {

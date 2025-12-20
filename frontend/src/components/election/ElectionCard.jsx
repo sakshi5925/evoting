@@ -34,7 +34,7 @@ const ElectionCard = ({ election }) => {
 
       {/* Name */}
       <h3 className="text-2xl font-bold mt-4">
-        {election.name}
+        {election.ElectionName}
       </h3>
 
       {/* Description */}

@@ -16,6 +16,7 @@ import { persistReducer, persistStore } from "redux-persist";
 import authReducer from './slices/authSlice';
 import electionReducer from './slices/electionSlice';
 import roleReducer from './slices/roleSlice';
+import candidateReducer from './slices/candidateSlice';
 
 
 
@@ -23,7 +24,8 @@ import roleReducer from './slices/roleSlice';
 const rootReducer = combineReducers({
   auth: authReducer,
   election: electionReducer,
-  role: roleReducer
+  role: roleReducer,
+  candidate: candidateReducer
 });
 
 

@@ -21,16 +21,16 @@ export const AssignRole = async function (req, res) {
         let tx;
 
         switch (role) {
-            case "admin":
+            case "SUPER_ADMIN":
                 tx = await RoleContract.addSuperAdmin(walletAddress);
                 break;
-            case "electionManager":
+            case "ELECTION_MANAGER":
                 tx = await RoleContract.addElectionManager(walletAddress);
                 break;
-            case "electionAuthority":
+            case "ELECTION_AUTHORITY":
                 tx = await RoleContract.addElectionAuthority(walletAddress);
                 break;
-            case "voter":
+            case "VOTER":
                 tx = await RoleContract.addVoter(walletAddress);
                 break;
             default:
@@ -76,16 +76,16 @@ export const removeRole = async function (req, res) {
         let tx;
 
         switch (role) {
-            case "admin":
+            case "SUPER_ADMIN":
                 tx = await RoleContract.removeSuperAdmin(walletAddress);
                 break;
-            case "electionManager":
+            case "ELECTION_MANAGER":
                 tx = await RoleContract.removeElectionManager(walletAddress);
                 break;
-            case "electionAuthority":
+            case "ELECTION_AUTHORITY":
                 tx = await RoleContract.removeElectionAuthority(walletAddress);
                 break;
-            case "voter":
+            case "VOTER":
                 tx = await RoleContract.removeVoter(walletAddress);
                 break;
         }
@@ -132,10 +132,10 @@ export const checkRoles = async (req, res) => {
 
     return res.status(200).json({
       role: user.role || "user",
-      isAdmin: user.role === "admin",
-      isElectionManager: user.role === "electionManager",
-      isElectionAuthority: user.role === "electionAuthority",
-      isVoter: user.role === "voter",
+      isAdmin: user.role === "SUPER_ADMIN",
+      isElectionManager: user.role === "ELECTION_MANAGER",
+      isElectionAuthority: user.role === "ELECTION_AUTHORITY",
+      isVoter: user.role === "VOTER",
     });
 
   } catch (error) {
@@ -146,7 +146,7 @@ export const checkRoles = async (req, res) => {
 
 export const ElectionManagersList = async function (req, res) {
     try{
-        const electionManagers = await User.find({ role: "electionManager" });
+        const electionManagers = await User.find({ role: "ELECTION_MANAGER" });
         // console.log("Election Managers List:", electionManagers);
         return res.status(200).json(electionManagers);
     }

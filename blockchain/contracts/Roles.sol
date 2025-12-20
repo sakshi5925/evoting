@@ -118,7 +118,7 @@ contract Roles is AccessControl {
         emit RoleRemoved(ELECTION_AUTHORITY, account);
     }
 
-    // ! ==================== VIEW FUNCTIONS ====================
+    // ! ==================== VIEW FUNCTIONS not need to fetch in backend ====================
 
     function isSuperAdmin(address account) external view returns (bool) {
         return hasRole(SUPER_ADMIN, account);

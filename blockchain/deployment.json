@@ -1,7 +1,6 @@
 {
   "network": "sepolia",
   "deployer": "0x79Fe7f2586D6F04AD2660B9a3e61AEe5Fb7933A6",
-  "Roles": "0xd6f7bb2AaC4f0b57ac34F6D31b291702FC217B4D",
-  "ElectionFactory": "0x220947b1f499530ABf5a6cBDa50Cb427D5318329",
-  "timestamp": "2025-11-18T17:05:40.601Z"
+  "Roles": "0x87957B476d6219cf376D4518B4EE7F481Ad610cC",
+  "ElectionFactory": "0x717f70aDfC4E8ecE50d05e56Fd41E11730331FE3"
 }

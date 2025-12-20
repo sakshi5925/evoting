@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   VoterID: { type: String, unique: true, sparse: true },
   role: {
     type: String,
-    enum: ["user","admin", "electionManager", "electionAuthority", "voter"],
+    enum: ["user","SUPER_ADMIN", "ELECTION_MANAGER", "ELECTION_AUTHORITY", "VOTER"],
     required: true,
     default: "user"
   }

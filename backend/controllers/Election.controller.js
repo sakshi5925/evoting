@@ -10,7 +10,7 @@ import {
     ElectionFactoryReadOnly
 } from "../utils/blockchain.js";
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
 
 // create election
 
@@ -26,6 +26,7 @@ export const createElection = async (req, res) => {
             electionManager
         } = req.body;
 
+        console.log("Received election creation request:", req.body);
         if (!privateKey)
             return res.status(400).json({ message: "Private key is required" });
 
@@ -35,21 +36,27 @@ export const createElection = async (req, res) => {
         if (!electionManager)
             return res.status(400).json({ message: "Election manager address required" });
 
-        // ⛓️ Create on-chain
+        if (!ethers.isAddress(electionManager)) {
+            return res.status(400).json({ message: "Invalid election manager address" });
+        }
+
+        const managerAddress = ethers.getAddress(electionManager);
+
+        //  Create on-chain
         const electionFactory = ElectionFactoryContract(privateKey);
 
         const tx = await electionFactory.createElection(
-            electionManager,
+            managerAddress,
             ElectionName,
             description || "",
-            ElectionStartTime,
-            ElectionEndTime,
-            registrationDeadline
+            Number(ElectionStartTime),
+            Number(ElectionEndTime),
+            Number(registrationDeadline)
         );
 
         const receipt = await tx.wait();
 
-        // 🧠 Parse ONLY address/id from factory event
+        // Parse ONLY address/id from factory event
         const parsedLogs = receipt.logs
             .map(log => {
                 try {
@@ -68,9 +75,8 @@ export const createElection = async (req, res) => {
             return res.status(500).json({ message: "ElectionCreated event not found" });
         }
 
-        const electionAddress = normalizeAddress(createdEvent.args.electionAddress);
-
-        // ✅ USE REQUEST TIMES (already validated by Solidity)
+        const electionAddress = ethers.getAddress(createdEvent.args.electionAddress);
+        const electionmanager = ethers.getAddress(createdEvent.args.manager);
         const startTime = Number(ElectionStartTime);
         const endTime = Number(ElectionEndTime);
         const regDeadline = Number(registrationDeadline);
@@ -84,18 +90,15 @@ export const createElection = async (req, res) => {
         }
 
         const newElection = new Election({
-            name: ElectionName,
+            ElectionName: ElectionName,
             description: description || "",
-            managerAddress: normalizeAddress(electionManager),
+            managerAddress: electionmanager,
             contractAddress: electionAddress,
-
             startTime,
             endTime,
             registrationDeadline: regDeadline,
-
             startdate: new Date(startTime * 1000),
             enddate: new Date(endTime * 1000),
-
             totalVotes: 0,
             totalCandidates: 0,
             candidates: [],
@@ -166,40 +169,40 @@ export const reactivateElection = async (req, res) => {
 
 //get election by address
 
-export const getElectionByAddress = async (req, res) => {
-    try {
-        const { electionAddress } = req.body;
+// export const getElectionByAddress = async (req, res) => {
+//     try {
+//         const { electionAddress } = req.body;
 
-        if (!electionAddress)
-            return res.status(400).json({ message: "Election address is required" });
+//         if (!electionAddress)
+//             return res.status(400).json({ message: "Election address is required" });
 
-        const electionFactory = ElectionFactoryReadOnly();
-        const electionData = await electionFactory.getElection(electionAddress);
+//         const electionFactory = ElectionFactoryReadOnly();
+//         const electionData = await electionFactory.getElection(electionAddress);
 
-        return res.status(200).json({
-            success: true,
-            election: {
-                id: bnToNumber(electionData.id),
-                electionAddress: normalizeAddress(electionData.electionAddress),
-                creator: normalizeAddress(electionData.creator),
-                name: electionData.name,
-                description: electionData.description,
-                startTime: bnToNumber(electionData.startTime),
-                endTime: bnToNumber(electionData.endTime),
-                createdAt: bnToNumber(electionData.createdAt),
-                isActive: electionData.isActive
-            }
-        });
+//         return res.status(200).json({
+//             success: true,
+//             election: {
+//                 id: bnToNumber(electionData.id),
+//                 electionAddress: normalizeAddress(electionData.electionAddress),
+//                 creator: normalizeAddress(electionData.creator),
+//                 name: electionData.name,
+//                 description: electionData.description,
+//                 startTime: bnToNumber(electionData.startTime),
+//                 endTime: bnToNumber(electionData.endTime),
+//                 createdAt: bnToNumber(electionData.createdAt),
+//                 isActive: electionData.isActive
+//             }
+//         });
 
-    } catch (error) {
-        if (error.reason === "Election not found") {
-            return res.status(404).json({ message: "Election not found" });
-        }
+//     } catch (error) {
+//         if (error.reason === "Election not found") {
+//             return res.status(404).json({ message: "Election not found" });
+//         }
 
-        console.error("Error fetching election:", error);
-        return res.status(500).json({ error: error.message });
-    }
-};
+//         console.error("Error fetching election:", error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// };
 
 
 // startCandidateRegistration, startVoting, endElection, declareResults, changeStatus
@@ -215,6 +218,7 @@ export const startCandidateRegistration = async function (req, res) {
     try {
         const { privateKey, electionAddress } = req.body;
 
+        console.log("Received request to start candidate registration for election:", electionAddress, privateKey);
         if (!privateKey) {
             return res.status(400).json({ message: "Private key is required" });
         }
@@ -223,6 +227,8 @@ export const startCandidateRegistration = async function (req, res) {
         const electionContract = getSignedElectionContract(privateKey, electionAddress);
         const tx = await electionContract.startCandidateRegistration();
         await tx.wait();
+        await Election.findOneAndUpdate({ contractAddress: normalizeAddress(electionAddress) }, { status: "Registration" });
+        console.log("Candidate registration started on-chain for election:", tx);
         return res.status(200).json({ message: "Candidate registration started successfully" });
     }
 
@@ -314,77 +320,119 @@ export const changeStatus = async function (req, res) {
 
 // register candidate
 
-export const registerCandidate = async function (req, res) {
-    try {
-        const { privateKey, electionAddress, name, party, manifesto, imageHash } = req.body;
+export const registerCandidate = async (req, res) => {
+  const { privateKey, electionAddress, candidateName, party } = req.body;
 
-        if (!privateKey) {
-            return res.status(400).json({ message: "Private key is required" });
+  try {
+    if (!privateKey || !electionAddress || !candidateName || !party) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const electionContract = new ethers.Contract(
+      electionAddress,
+      electionAbi,
+      wallet
+    );
+
+    // 🔹 TRY normal registration
+    const tx = await electionContract.registerCandidate(candidateName, party);
+    const receipt = await tx.wait();
+
+    const parsed = receipt.logs
+      .map(log => {
+        try {
+          return electionContract.interface.parseLog(log);
+        } catch {
+          return null;
         }
-        if (!electionAddress) {
-            return res.status(400).json({ message: "Election address is required" });
-        }
-        if (!name || !party) {
-            return res.status(400).json({ message: "Name and Party are required" });
-        }
+      })
+      .find(e => e?.name === "CandidateRegistered");
 
+    if (!parsed) {
+      throw new Error("CandidateRegistered event not found");
+    }
 
-        const wallet = new ethers.Wallet(privateKey, provider);
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, wallet);
+    const { candidateId, candidateAddress } = parsed.args;
 
+    // ✅ Save to DB
+    await Candidate.create({
+      electionAddress: normalizeAddress(electionAddress),
+      candidateId: Number(candidateId),
+      candidateAddress: normalizeAddress(candidateAddress),
+      name: candidateName,
+      party,
+      status: "Pending",
+      voteCount: 0,
+    });
 
-        const tx = await electionContract.registerCandidate(
-            name,
-            party,
-            manifesto || "",
-            imageHash || ""
-        );
+    return res.status(200).json({
+      message: "Candidate registered successfully",
+      candidateId: Number(candidateId),
+      candidateAddress,
+    });
 
+  } catch (error) {
+    // 🔁 HANDLE ALREADY REGISTERED CASE
+    if (error.shortMessage?.includes("Already registered")) {
+      console.log("Candidate already registered on-chain, syncing DB...");
 
-        const receipt = await tx.wait();
-        const event = receipt.events?.find(e => e.event === "CandidateRegistered");
+      const wallet = new ethers.Wallet(privateKey);
+      const candidateAddress = wallet.address;
 
-        if (!event) {
-            return res.status(500).json({ message: "CandidateRegistered event not found" });
-        }
+      const readContract = new ethers.Contract(
+        electionAddress,
+        electionAbi,
+        provider
+      );
 
-        const [candidateId, candidateAddress, candidateName] = event.args;
+      // 🔹 READ FROM BLOCKCHAIN
+      const candidateId = await readContract.candidateAddressToId(candidateAddress);
 
+      if (candidateId.toString() === "0") {
+        return res.status(400).json({
+          message: "Candidate not found on-chain",
+        });
+      }
 
-        const candidate = new Candidate({
-            election: normalizeAddress(electionAddress),
+      const candidateOnChain = await readContract.candidates(candidateId);
+
+      // 🔹 UPSERT INTO DB (safe)
+      await Candidate.updateOne(
+        {
+          electionAddress: normalizeAddress(electionAddress),
+          candidateAddress: normalizeAddress(candidateAddress),
+        },
+        {
+          $setOnInsert: {
+            electionAddress: normalizeAddress(electionAddress),
             candidateId: Number(candidateId),
-            candidateAddress: candidateAddress,
-            name,
-            party,
-            manifesto: manifesto || "",
-            imageHash: imageHash || "",
+            candidateAddress: normalizeAddress(candidateAddress),
+            name: candidateOnChain.name,
+            party: candidateOnChain.party,
             status: "Pending",
-            voteCount: 0
-        });
+            voteCount: Number(candidateOnChain.voteCount),
+          },
+        },
+        { upsert: true }
+      );
 
-        await candidate.save();
-
-        return res.status(200).json({
-            message: "Candidate registered successfully",
-            candidateId: Number(candidateId),
-            candidateAddress,
-        });
-
+      return res.status(200).json({
+        message: "Candidate already registered (DB synced)",
+        candidateId: Number(candidateId),
+        candidateAddress,
+      });
     }
 
-    catch (error) {
-        console.error("Error registering candidate:", error);
-        return res.status(500).json({ error: error.message });
-    }
-
-}
-
+    console.error("Error registering candidate:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
 //validate candidate
 
 export const validateCandidate = async function (req, res) {
     try {
-        const { privateKey, electionAddress, candidateAddress, isValid, candidateId } = req.body;
+        const { privateKey, electionAddress, isValid, candidateId } = req.body;
 
         if (!privateKey) return res.status(400).json({ message: "Private key is required" });
         if (!electionAddress) return res.status(400).json({ message: "Election address is required" });
@@ -402,6 +450,14 @@ export const validateCandidate = async function (req, res) {
 
         candidate.status = isValid ? "Approved" : "Rejected";
         await candidate.save();
+
+        const election = await Election.findOne({ contractAddress: normalizeAddress(electionAddress) });
+        if (!election) return res.status(404).json({ message: "Election not found" });
+        if (isValid) {
+            election.candidates.push(candidate._id);
+            election.totalCandidates += 1;
+            await election.save();
+        }
 
         return res.status(200).json({ message: "Candidate validation status updated successfully" });
 
@@ -433,32 +489,20 @@ export const castVote = async function (req, res) {
         await tx.wait();
 
 
-        const candidateData = await (new ethers.Contract(electionAddress, electionAbi, provider)).getCandidateDetails(candidateId);
-        const chainVoteCount = bnToNumber(candidateData.voteCount);
+        // const candidateData = await (new ethers.Contract(electionAddress, electionAbi, provider)).getCandidateDetails(candidateId);
+        // const chainVoteCount = bnToNumber(candidateData.voteCount);
 
         const candidateDoc = await Candidate.findOne({ candidateId: Number(candidateId), election: normalizeAddress(electionAddress) });
 
         if (!candidateDoc) {
-            // If DB candidate absent, optionally create it from chain info
-            await Candidate.create({
-                election: normalizeAddress(electionAddress),
-                candidateId: Number(candidateId),
-                candidateAddress: normalizeAddress(candidateData.candidateAddress || ""),
-                name: candidateData.name || "",
-                party: candidateData.party || "",
-                manifesto: candidateData.manifesto || "",
-                imageHash: candidateData.imageHash || "",
-                status: String(candidateData.status || "0"),
-                voteCount: chainVoteCount
-            });
+            return res.status(404).json({ message: "Candidate not found" });
         } else {
-            candidateDoc.voteCount = chainVoteCount;
+            candidateDoc.voteCount += 1;
             await candidateDoc.save();
         }
 
-        const electionInfo = await (new ethers.Contract(electionAddress, electionAbi, provider)).getElectionInfo();
-        const chainTotalVotes = bnToNumber(electionInfo.totalVotes);
-        await Election.findOneAndUpdate({ contractAddress: normalizeAddress(electionAddress) }, { totalVotes: chainTotalVotes }).catch(() => null);
+
+        await Election.findOneAndUpdate({ contractAddress: normalizeAddress(electionAddress) }, { totalVotes: totalVotes + 1 }).catch(() => null);
 
         return res.status(200).json({ message: "Vote cast successfully" });
 
@@ -497,8 +541,6 @@ export const getWinner = async function (req, res) {
                 candidateAddress: candidate.candidateAddress,
                 name: candidate.name,
                 party: candidate.party,
-                manifesto: candidate.manifesto,
-                imageHash: candidate.imageHash,
                 voteCount: candidate.voteCount,
                 status: candidate.status
             }
@@ -521,21 +563,20 @@ export const getCandidateDetails = async function (req, res) {
         if (!electionAddress) return res.status(400).json({ message: "Election address is required" });
 
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
-
-        const candidateData = await electionContract.getCandidateDetails(candidateId);
+        const candidateDoc = await Candidate.findOne({ candidateId: Number(candidateId), election: normalizeAddress(electionAddress) });
+        if (!candidateDoc) {
+            return res.status(404).json({ message: "Candidate not found" });
+        }
 
         return res.status(200).json({
             message: "Candidate details fetched successfully",
             candidate: {
-                candidateId: bnToNumber(candidateData.id),
-                candidateAddress: normalizeAddress(candidateData.candidateAddress),
-                name: candidateData.name,
-                party: candidateData.party,
-                manifesto: candidateData.manifesto,
-                imageHash: candidateData.imageHash,
-                status: bnToNumber(candidateData.status),
-                voteCount: bnToNumber(candidateData.voteCount)
+                candidateId: candidateDoc.candidateId,
+                candidateAddress: candidateDoc.candidateAddress,
+                name: candidateDoc.name,
+                party: candidateDoc.party,
+                status: candidateDoc.status,
+                voteCount: candidateDoc.voteCount
             }
         });
 
@@ -556,23 +597,20 @@ export const getPendingCandidates = async function (req, res) {
             return res.status(400).json({ message: "Election address is required" });
         }
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
-
-        const pendingCandidates = await electionContract.getPendingCandidates();
-
-
-
-        const formatted = pendingCandidates.map(c => ({
-            id: bnToNumber(c.id),
-            name: c.name,
-            party: c.party,
-            voteCount: bnToNumber(c.voteCount),
-            status: bnToNumber(c.status)
-        }));
+        const pendingCandidates = await Candidate.find({
+            election: normalizeAddress(electionAddress),
+            status: "Pending"
+        });
 
         return res.status(200).json({
             message: "Pending candidates fetched successfully",
-            pendingCandidates: formatted
+            candidates: pendingCandidates.map(candidate => ({
+                candidateId: candidate.candidateId,
+                candidateAddress: candidate.candidateAddress,
+                name: candidate.name,
+                party: candidate.party,
+
+            }))
         });
 
     } catch (error) {
@@ -583,73 +621,73 @@ export const getPendingCandidates = async function (req, res) {
 
 //getVoterStatus
 
-export const getVoterStatus = async function (req, res) {
-    try {
+// export const getVoterStatus = async function (req, res) {
+//     try {
 
-        const { electionAddress, voterAddress } = req.body;
+//         const { electionAddress, voterAddress } = req.body;
 
-        if (!electionAddress) {
-            return res.status(400).json({ message: "Election address is required" });
-        }
+//         if (!electionAddress) {
+//             return res.status(400).json({ message: "Election address is required" });
+//         }
 
-        if (!voterAddress) {
-            return res.status(400).json({ message: "Voter address is required" });
-        }
+//         if (!voterAddress) {
+//             return res.status(400).json({ message: "Voter address is required" });
+//         }
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
+//         const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
 
-        const voterStatus = await electionContract.getVoterStatus(voterAddress);
+//         const voterStatus = await electionContract.getVoterStatus(voterAddress);
 
-        return res.status(200).json({
-            message: "Voter status fetched successfully",
-            voterStatus: {
-                isRoleVoter: voterStatus.isRoleVoter,
-                hasAlreadyVoted: voterStatus.hasAlreadyVoted,
-                votedFor: voterStatus.votedFor ? Number(voterStatus.votedFor) : null
-            }
-        });
+//         return res.status(200).json({
+//             message: "Voter status fetched successfully",
+//             voterStatus: {
+//                 isRoleVoter: voterStatus.isRoleVoter,
+//                 hasAlreadyVoted: voterStatus.hasAlreadyVoted,
+//                 votedFor: voterStatus.votedFor ? Number(voterStatus.votedFor) : null
+//             }
+//         });
 
-    }
-    catch (error) {
-        console.error("Error fetching voter status:", error);
-        return res.status(500).json({ error: error.message });
-    }
-}
+//     }
+//     catch (error) {
+//         console.error("Error fetching voter status:", error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// }
 
 //getElectionInfo
 
-export const getElectionInfo = async function (req, res) {
-    try {
-        const { electionAddress } = req.body;
+// export const getElectionInfo = async function (req, res) {
+//     try {
+//         const { electionAddress } = req.body;
 
-        if (!electionAddress) {
-            return res.status(400).json({ message: "Election address is required" });
-        }
+//         if (!electionAddress) {
+//             return res.status(400).json({ message: "Election address is required" });
+//         }
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
+//         const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
 
-        const electionInfo = await electionContract.getElectionInfo();
+//         const electionInfo = await electionContract.getElectionInfo();
 
-        return res.status(200).json({
-            message: "Election info fetched successfully",
-            electionInfo: {
-                name: electionInfo.name,
-                description: electionInfo.description,
-                startTime: bnToNumber(electionInfo.startTime),
-                endTime: bnToNumber(electionInfo.endTime),
-                registrationDeadline: bnToNumber(electionInfo.registrationDeadline),
-                status: bnToNumber(electionInfo.status),
-                totalVotes: bnToNumber(electionInfo.totalVotes),
-                totalCandidates: bnToNumber(electionInfo.totalCandidates)
-            }
-        });
+//         return res.status(200).json({
+//             message: "Election info fetched successfully",
+//             electionInfo: {
+//                 name: electionInfo.name,
+//                 description: electionInfo.description,
+//                 startTime: bnToNumber(electionInfo.startTime),
+//                 endTime: bnToNumber(electionInfo.endTime),
+//                 registrationDeadline: bnToNumber(electionInfo.registrationDeadline),
+//                 status: bnToNumber(electionInfo.status),
+//                 totalVotes: bnToNumber(electionInfo.totalVotes),
+//                 totalCandidates: bnToNumber(electionInfo.totalCandidates)
+//             }
+//         });
 
-    }
-    catch (error) {
-        console.error("Error fetching election info:", error);
-        return res.status(500).json({ error: error.message });
-    }
-}
+//     }
+//     catch (error) {
+//         console.error("Error fetching election info:", error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// }
 
 //isVoterRole
 
@@ -665,13 +703,16 @@ export const isVoterRole = async function (req, res) {
             return res.status(400).json({ message: "Voter address is required" });
         }
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
+        const user = await User.findOne({ walletAddress: voterAddress });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
-        const isVoter = await electionContract.isVoter(voterAddress);
+        const isVoter = user.role === "VOTER";
 
         return res.status(200).json({
             message: "Voter role status fetched successfully",
-            isVoter: isVoter
+            isVoter
         });
 
     }
@@ -691,9 +732,12 @@ export const getTotalCandidates = async function (req, res) {
             return res.status(400).json({ message: "Election address is required" });
         }
 
-        const electionContract = new ethers.Contract(electionAddress, electionAbi, provider);
+        const election = await Election.findOne({ contractAddress: normalizeAddress(electionAddress) });
+        if (!election) {
+            return res.status(404).json({ message: "Election not found" });
+        }
 
-        const totalCandidates = await electionContract.getTotalCandidates();
+        const totalCandidates = election.totalCandidates;
 
         return res.status(200).json({
             message: "Total candidates fetched successfully",
@@ -731,47 +775,47 @@ export const getUpcomingElections = async (req, res) => {
 //get ongoing elections
 
 export const getOngoingElections = async (req, res) => {
-  try {
-    const now = Math.floor(Date.now() / 1000);
+    try {
+        const now = Math.floor(Date.now() / 1000);
 
-    const elections = await Election.find({
-      startTime: { $lte: now },
-      endTime: { $gte: now },
-      status: "Voting",
-      isActive: true
-    }).sort({ startTime: 1 });
+        const elections = await Election.find({
+            startTime: { $lte: now },
+            endTime: { $gte: now },
+            status: "Voting",
+            isActive: true
+        }).sort({ startTime: 1 });
 
-    return res.status(200).json({
-      success: true,
-      elections
-    });
-  } catch (error) {
-    console.error("Error fetching ongoing elections:", error);
-    return res.status(500).json({ error: error.message });
-  }
+        return res.status(200).json({
+            success: true,
+            elections
+        });
+    } catch (error) {
+        console.error("Error fetching ongoing elections:", error);
+        return res.status(500).json({ error: error.message });
+    }
 };
 
 //get past elections
 
 export const getCompletedElections = async (req, res) => {
-  try {
-    const now = Math.floor(Date.now() / 1000);
+    try {
+        const now = Math.floor(Date.now() / 1000);
 
-    const elections = await Election.find({
-      $or: [
-        { endTime: { $lt: now } },
-        { status: { $in: ["Ended", "ResultDeclared"] } }
-      ]
-    }).sort({ endTime: -1 });
+        const elections = await Election.find({
+            $or: [
+                { endTime: { $lt: now } },
+                { status: { $in: ["Ended", "ResultDeclared"] } }
+            ]
+        }).sort({ endTime: -1 });
 
-    return res.status(200).json({
-      success: true,
-      elections
-    });
-  } catch (error) {
-    console.error("Error fetching completed elections:", error);
-    return res.status(500).json({ error: error.message });
-  }
+        return res.status(200).json({
+            success: true,
+            elections
+        });
+    } catch (error) {
+        console.error("Error fetching completed elections:", error);
+        return res.status(500).json({ error: error.message });
+    }
 };
 
 //get all elections

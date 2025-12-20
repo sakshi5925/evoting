@@ -3,7 +3,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 // Initial state
 const initialState = {
   hasVoted: false,
-  votedCandidateId: null,
   isLoading: false,
   error: null
 };
@@ -28,20 +27,20 @@ export const castVote = createAsyncThunk(
 );
 
 // get Voter Status
-export const getVoterStatus = createAsyncThunk(
-  "vote/getVoterStatus",
-  async ({ electionAddress, walletAddress }, { rejectWithValue }) => {
-      try {
-          const response = await axios.post(`${API_BASE}/election/getVoterStatus`, {
-              electionAddress,
-              walletAddress
-          });
-          return response.data;
-      } catch (err) {
-          return rejectWithValue(err.response?.data?.message || err.message);
-      }
-  }
-);
+// export const getVoterStatus = createAsyncThunk(
+//   "vote/getVoterStatus",
+//   async ({ electionAddress, walletAddress }, { rejectWithValue }) => {
+//       try {
+//           const response = await axios.post(`${API_BASE}/election/getVoterStatus`, {
+//               electionAddress,
+//               walletAddress
+//           });
+//           return response.data;
+//       } catch (err) {
+//           return rejectWithValue(err.response?.data?.message || err.message);
+//       }
+//   }
+// );
 
 // SLICE
 const voteSlice = createSlice({
@@ -50,7 +49,6 @@ const voteSlice = createSlice({
   reducers: {
     resetVoteState: (state) => {
       state.hasVoted = false;
-      state.votedCandidateId = null;
       state.isLoading = false;
       state.error = null;
     }
@@ -70,19 +68,19 @@ const voteSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(getVoterStatus.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(getVoterStatus.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.hasVoted = action.payload.hasAlreadyVoted;
-        state.votedCandidateId = action.payload.votedFor;
-      })
-      .addCase(getVoterStatus.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      });
+      // .addCase(getVoterStatus.pending, (state) => {
+      //   state.isLoading = true;
+      //   state.error = null;
+      // })
+      // .addCase(getVoterStatus.fulfilled, (state, action) => {
+      //   state.isLoading = false;
+      //   state.hasVoted = action.payload.hasAlreadyVoted;
+      //   state.votedCandidateId = action.payload.votedFor;
+      // })
+      // .addCase(getVoterStatus.rejected, (state, action) => {
+      //   state.isLoading = false;
+      //   state.error = action.payload;
+      // });
   },
 });
 

@@ -48,8 +48,8 @@ export default function CreateElection() {
 
     const form = e.target;
 
-    const electionData = {
-      privateKey, // 🔐 TEMPORARY USE ONLY
+    const electionData =  {
+      privateKey, 
       ElectionName: form.ElectionName.value,
       description: form.description.value,
       ElectionStartTime: Math.floor(
@@ -70,7 +70,7 @@ export default function CreateElection() {
       if (createElection.fulfilled.match(result)) {
         alert("Election created successfully!");
         form.reset();
-        setPrivateKey(""); // 🔥 clear key
+        setPrivateKey(""); // 
       } else {
         alert("Failed to create election");
       }

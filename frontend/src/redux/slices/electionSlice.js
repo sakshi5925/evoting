@@ -25,6 +25,7 @@ export const createElection = createAsyncThunk(
   "election/createElection",
   async ({ privateKey, ElectionName, description, ElectionStartTime, ElectionEndTime, registrationDeadline, electionManager }, { rejectWithValue }) => {
     try {
+      console.log("Creating election with data:", { privateKey, ElectionName, description, ElectionStartTime, ElectionEndTime, registrationDeadline, electionManager });
       const response = await axios.post(`${API_BASE}/election/create`, {
         privateKey,
         ElectionName,
@@ -85,7 +86,8 @@ export const startCandidateRegistration = createAsyncThunk(
   "election/startCandidateRegistration",
   async ({ privateKey, electionAddress }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_BASE}/election/startCandidateRegistration`, { electionAddress });
+      console.log("Starting candidate registration for election:", electionAddress, privateKey);
+      const response = await axios.post(`${API_BASE}/election/startCandidateRegistration`, { electionAddress , privateKey});
       return response.data;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -135,7 +137,7 @@ export const declareResults = createAsyncThunk(
 //changeStatus
 export const changeStatus = createAsyncThunk(
   "election/changeStatus",
-  async ({ privateKey, electionAddress }, { rejectWithValue }) => {
+  async ({ privateKey, status,electionAddress }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_BASE}/election/changeStatus`, { electionAddress });
       return response.data;

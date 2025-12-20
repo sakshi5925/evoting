@@ -9,6 +9,7 @@ import CreateElection from "./components/election/createElection";
 import ManageUsers from "./components/election/ManageUser";
 import ElectionsPage from "./pages/ElectionsPage";
 import ElectionDetailPage from "./pages/ElectionDetailPage";
+import RegisterCandidate from "./components/candidate/RegisterCandidate";
 
 import { connectWallet, logoutUser } from "./redux/slices/authSlice";
 
@@ -55,7 +56,8 @@ export default function App() {
         <Route path="/create-election" element={<CreateElection />} />
         <Route path="/manage-users" element={<ManageUsers />} />
         <Route path="/elections" element={<ElectionsPage />} />
-          <Route path="/election/:id" element={<ElectionDetailPage />} />
+        <Route path="/election/:id" element={<ElectionDetailPage />} />
+        <Route path="/register-candidate/:electionAddress" element={<RegisterCandidate />} />
       </Routes>
     </BrowserRouter>
   );
