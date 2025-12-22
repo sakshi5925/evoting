@@ -10,6 +10,7 @@ import ManageUsers from "./components/election/ManageUser";
 import ElectionsPage from "./pages/ElectionsPage";
 import ElectionDetailPage from "./pages/ElectionDetailPage";
 import RegisterCandidate from "./components/candidate/RegisterCandidate";
+import ValidateCandidates from "./components/candidate/ValidateCandidate";
 
 import { connectWallet, logoutUser } from "./redux/slices/authSlice";
 
@@ -40,8 +41,8 @@ export default function App() {
     // Cleanup listeners on unmount
     return () => {
       if (window.ethereum && window.ethereum.removeListener) {
-        window.ethereum.removeListener("accountsChanged", () => {});
-        window.ethereum.removeListener("chainChanged", () => {});
+        window.ethereum.removeListener("accountsChanged", () => { });
+        window.ethereum.removeListener("chainChanged", () => { });
       }
     };
   }, [dispatch]);
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/elections" element={<ElectionsPage />} />
         <Route path="/election/:id" element={<ElectionDetailPage />} />
         <Route path="/register-candidate/:electionAddress" element={<RegisterCandidate />} />
+        <Route path="/validate-candidates/:electionAddress" element={<ValidateCandidates />}/>
       </Routes>
     </BrowserRouter>
   );

@@ -1,11 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
+import axios from "axios";
 // Initial state
 const initialState = {
   hasVoted: false,
   isLoading: false,
   error: null
 };
+const API_BASE = "http://localhost:5000/api";
 
 // THUNKS
 
@@ -18,6 +20,21 @@ export const castVote = createAsyncThunk(
               privateKey,
               electionAddress,
               candidateId
+          });
+          return response.data;
+      } catch (err) {
+          return rejectWithValue(err.response?.data?.message || err.message);
+      }
+  }
+);
+
+//register voter
+export const registerVoter=createAsyncThunk(
+  "vote/registerVoter",
+   async ({walletAddress}, { rejectWithValue }) => {
+      try {
+          const response = await axios.post(`${API_BASE}/election/voterRegister`, {
+             walletAddress
           });
           return response.data;
       } catch (err) {
@@ -81,6 +98,19 @@ const voteSlice = createSlice({
       //   state.isLoading = false;
       //   state.error = action.payload;
       // });
+      .addCase(registerVoter.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerVoter.fulfilled, (state, action) => {
+        state.isLoading = false;
+      
+      })
+      .addCase(registerVoter.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
   },
 });
 
