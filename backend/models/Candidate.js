@@ -30,8 +30,14 @@ const candidateSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 candidateSchema.index(
-  { electionAddress: 1},
+  { electionAddress: 1, candidateId: 1 },
   { unique: true }
 );
+
+candidateSchema.index(
+  { electionAddress: 1, candidateAddress: 1 },
+  { unique: true }
+);
+
 
 export default mongoose.model("Candidate", candidateSchema);
