@@ -23,13 +23,21 @@ const provider = new ethers.JsonRpcProvider(
         chainId: 11155111,
     },
     {
-        timeout: 20000, // 20 seconds
+        timeout: 120_000,// 20 seconds
     }
 );
+
+try {
+    const network = await provider.getNetwork();
+    console.log("CONNECTED TO:", network);
+} catch (e) {
+    console.error("RPC FAILED:", e);
+}
 
 
 
 // const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
 
 
 //Correct relative paths to ABI files

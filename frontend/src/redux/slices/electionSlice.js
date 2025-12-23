@@ -113,7 +113,7 @@ export const endElection = createAsyncThunk(
   "election/endElection",
   async ({ privateKey, electionAddress }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_BASE}/election/endElection`, { electionAddress });
+      const response = await axios.post(`${API_BASE}/election/endElection`, { electionAddress,privateKey });
       return response.data;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -180,6 +180,7 @@ export const getOngoingElections = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_BASE}/election/getOngoingElections`);
+      console.log("elections",response);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -419,7 +420,21 @@ const electionSlice = createSlice({
       })
       .addCase(getOngoingElections.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.OngoingElections = action.payload;
+         const elections = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.elections || [];
+
+        elections.forEach((incomingElection) => {
+          const index = state.OngoingElections.findIndex(
+            (e) => e._id === incomingElection._id
+          );
+
+          if (index !== -1) {
+            state.OngoingElections[index] = incomingElection;
+          } else {
+            state.OngoingElections.push(incomingElection);
+          }
+        });
 
       })
       .addCase(getOngoingElections.rejected, (state, action) => {
@@ -432,8 +447,22 @@ const electionSlice = createSlice({
 
       })
       .addCase(getCompletedElections.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.CompletedElections = action.payload;
+      state.isLoading = false;
+       const elections = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.elections || [];
+
+        elections.forEach((incomingElection) => {
+          const index = state.CompletedElections.findIndex(
+            (e) => e._id === incomingElection._id
+          );
+
+          if (index !== -1) {
+            state.CompletedElections[index] = incomingElection;
+          } else {
+            state.CompletedElections.push(incomingElection);
+          }
+        });
       })
       .addCase(getCompletedElections.rejected, (state, action) => {
         state.isLoading = false;

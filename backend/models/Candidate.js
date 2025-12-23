@@ -9,6 +9,7 @@ const candidateSchema = new mongoose.Schema({
   candidateId: {
     type: Number,
     required: true,
+    
   },
   candidateAddress: {
     type: String,
@@ -29,7 +30,7 @@ const candidateSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 candidateSchema.index(
-  { electionAddress: 1, candidateAddress: 1 },
+  { electionAddress: 1},
   { unique: true }
 );
 

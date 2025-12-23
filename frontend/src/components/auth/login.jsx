@@ -4,6 +4,7 @@ import { connectWallet, loginUser } from "../../redux/slices/authSlice";
 import { useNavigate } from "react-router-dom";
 import { FaWallet } from "react-icons/fa";
 import { MdVerifiedUser } from "react-icons/md";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const dispatch = useDispatch();
@@ -14,8 +15,13 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    const toastId = toast.loading("Connecting wallet...");
+
     try {
       const { walletAddress } = await dispatch(connectWallet()).unwrap();
+
+      toast.loading("Verifying Aadhaar...", { id: toastId });
+
       await dispatch(
         loginUser({
           walletAddress,
@@ -23,12 +29,14 @@ export default function Login() {
         })
       ).unwrap();
 
-      alert("Login Successful!");
+      toast.success("Login successful ", { id: toastId });
       navigate("/");
       e.target.reset();
+
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login failed. Try again.");
+      toast.error("Login failed. Please try again.", { id: toastId });
+
     } finally {
       setLoading(false);
     }

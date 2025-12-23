@@ -17,6 +17,7 @@ import authReducer from './slices/authSlice';
 import electionReducer from './slices/electionSlice';
 import roleReducer from './slices/roleSlice';
 import candidateReducer from './slices/candidateSlice';
+import voteReducer from './slices/voteSlice'
 
 
 
@@ -25,7 +26,8 @@ const rootReducer = combineReducers({
   auth: authReducer,
   election: electionReducer,
   role: roleReducer,
-  candidate: candidateReducer
+  candidate: candidateReducer,
+  vote: voteReducer
 });
 
 

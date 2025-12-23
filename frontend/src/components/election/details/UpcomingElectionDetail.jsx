@@ -164,16 +164,7 @@ const UpcomingElectionDetail = () => {
                     }
                   />
 
-                  <AdminButton
-                    label="Start Voting"
-                    disabled={!privateKey || !canStartVoting}
-                    onClick={() =>
-                      dispatch(startVoting({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      }))
-                    }
-                  />
+                  
                 </>
               )}
 
