@@ -1,112 +1,96 @@
-🗳️ Decentralized E-Voting System (Blockchain Based)
+# 🗳️ Decentralized E-Voting System (Blockchain Based)
 
-A secure, transparent, and decentralized e-voting platform built using Ethereum smart contracts, Node.js, MongoDB, and React.
-This system ensures tamper-proof elections, role-based access, and verifiable results using blockchain technology.
+A **secure, transparent, and decentralized e-voting platform** built using **Ethereum smart contracts**, **Node.js**, **MongoDB**, and **React**.  
+This system ensures **tamper-proof elections**, **role-based access**, and **verifiable results** using blockchain technology.
 
-🚀 Features
-🔐 Authentication & Roles
+---
 
-Wallet-based authentication (MetaMask)
+## 🚀 Features
 
-Role-based access:
+### 🔐 Authentication & Roles
+- Wallet-based authentication using **MetaMask**
+- Role-based access control:
+  - **SUPER_ADMIN**
+  - **ELECTION_MANAGER**
+  - **ELECTION_AUTHORITY**
+  - **VOTER**
 
-SUPER_ADMIN
+---
 
-ELECTION_MANAGER
+### 🏗️ Election Management
+- Create elections **on-chain** via `ElectionFactory`
+- Store election metadata securely in **MongoDB**
+- Activate / Deactivate elections
+- Start candidate registration
+- Start voting (validated by time & blockchain state)
+- End election
+- Declare results on blockchain
 
-ELECTION_AUTHORITY
+---
 
-VOTER
+### 🧑‍💼 Candidate Management
+- Candidate registration (on-chain + database sync)
+- Authority-based candidate validation
+- Prevent duplicate candidate registration
+- Only approved candidates can contest
+- Vote count synced using blockchain events
 
-🏗️ Election Management
+---
 
-Create elections on-chain via ElectionFactory
+### 🗳️ Voting
+- One-person-one-vote enforcement
+- Vote casting via smart contracts
+- Total votes synced to MongoDB
+- Immutable voting records on blockchain
 
-Store election metadata securely in MongoDB
+---
 
-Activate / Deactivate elections
+### 📊 Results
+- Declare results on-chain
+- Fetch winner securely
+- Display vote counts and winner details
+- Fully verifiable and transparent outcomes
 
-Start candidate registration
+---
 
-Start voting (time & status validated)
+## 🧱 Tech Stack
 
-End election
+### Frontend
+- React.js
+- Redux Toolkit
+- Tailwind CSS
+- Ethers.js
 
-Declare results on blockchain
+### Backend
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- Ethers.js
 
-🧑‍💼 Candidate Management
+### Blockchain
+- Solidity
+- Ethereum
+- Hardhat
+- MetaMask
 
-Candidate registration (on-chain + DB sync)
+---
 
-Authority-based candidate validation
+## ⚙️ Environment Variables
 
-Prevent duplicate registration
+Create a `.env` file inside the **backend** directory:
 
-Approved candidates only can contest
-
-Vote count synced with blockchain events
-
-🗳️ Voting
-
-One-person-one-vote enforcement
-
-Vote casting via smart contract
-
-Total votes synced to MongoDB
-
-Immutable voting records on blockchain
-
-📊 Results
-
-Declare results on-chain
-
-Fetch winner securely
-
-Display vote counts and winner details
-
-Verifiable and transparent outcomes
-
-🧱 Tech Stack
-Frontend
-
-React.js
-
-Redux Toolkit
-
-Tailwind CSS
-
-Ethers.js
-
-Backend
-
-Node.js
-
-Express.js
-
-MongoDB + Mongoose
-
-Ethers.js
-
-Blockchain
-
-Solidity
-
-Ethereum
-
-Hardhat
-
-MetaMask
-
-⚙️ Environment Variables
-
-Create a .env file in the backend directory:
+```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/evoting
-RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
 PRIVATE_KEY=your_deployer_private_key
+
+
 
 🔧 Installation & Setup
 1️⃣ Clone the Repository
+
 git clone https://github.com/sakshi5925/evoting
 cd evoting
 
@@ -114,7 +98,6 @@ cd evoting
 cd backend
 npm install
 npm run dev
-
 3️⃣ Frontend Setup
 cd frontend
 npm install
@@ -127,31 +110,31 @@ npx hardhat compile
 npx hardhat run scripts/deploy.js --network sepolia
 
 
-Update deployed contract addresses in:
+After deployment, update the contract addresses in:
 
 backend/utils/blockchain.js
 
 🔐 Security Practices
 
-Ethereum addresses are normalized before DB storage
+Ethereum addresses are normalized before database storage
 
-Role-based authorization for critical actions
+Strict role-based authorization for sensitive actions
 
-Blockchain state validated before DB updates
+Blockchain state validated before database updates
 
 Prevents duplicate candidate registration
 
-Prevents double voting
+Prevents double voting at smart contract level
 
 🧠 Key Design Decisions
 
-Blockchain = Source of Truth
+Blockchain is the single source of truth
 
-MongoDB = Read Optimization Layer
+MongoDB is used as a read-optimization layer
 
-On-chain events used to sync database
+On-chain events are used to sync database state
 
-Strict state validation before transitions
+Strict validation before election state transitions
 
 👩‍💻 Author
 
