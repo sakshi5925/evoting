@@ -1,9 +1,16 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllUsers, assignRole, removeRole } from "../../redux/slices/roleSlice";
+import { useNavigate } from "react-router-dom";
+
+import {
+  getAllUsers,
+  assignRole,
+  removeRole,
+} from "../../redux/slices/roleSlice";
 
 export default function ManageUsers() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { users, loading, error } = useSelector((state) => state.role);
   const currentUser = useSelector((state) => state.auth.user);
@@ -22,9 +29,9 @@ export default function ManageUsers() {
     dispatch(removeRole({ walletAddress, role }));
   };
 
-  // Remove self from list
+  // Remove self
   const filteredUsers = users.filter(
-    (user) => user.walletAddress !== currentUser?.walletAddress
+    (u) => u.walletAddress !== currentUser?.walletAddress
   );
 
   const canAssignAdmin = currentRole === "SUPER_ADMIN";
@@ -35,150 +42,219 @@ export default function ManageUsers() {
     currentRole === "ELECTION_AUTHORITY";
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-xl p-6">
-        <h1 className="text-3xl font-bold text-indigo-700 mb-6">
-          Manage Users & Roles
-        </h1>
+    <div className="min-h-screen bg-[#0b0f14] px-6 py-10 text-gray-100">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-3 text-sm text-gray-400 hover:text-gray-200 transition"
+          >
+            ← Back
+          </button>
 
-        {loading && <p className="text-center">Loading users...</p>}
-        {error && <p className="text-center text-red-500">{error}</p>}
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Manage Users
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Assign and revoke platform roles securely
+          </p>
+        </div>
 
-        {!loading && filteredUsers.length === 0 && (
-          <p className="text-center text-gray-500">No users found</p>
-        )}
+        {/* Card */}
+        <div className="bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden">
+          {loading && (
+            <div className="p-6 text-gray-400">Loading users…</div>
+          )}
 
-        {!loading && filteredUsers.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg">
-              <thead className="bg-indigo-600 text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Wallet</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
-                </tr>
-              </thead>
+          {error && (
+            <div className="p-6 text-red-400 bg-red-500/10 border-b border-red-500/20">
+              {error}
+            </div>
+          )}
 
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.walletAddress} className="border-t">
-                    <td className="px-4 py-3 font-medium">
-                      {user.name || "N/A"}
-                    </td>
+          {!loading && filteredUsers.length === 0 && (
+            <div className="p-6 text-gray-400">No users found</div>
+          )}
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {user.walletAddress}
-                    </td>
+          {!loading && filteredUsers.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#020617] border-b border-white/10">
+                  <tr className="text-left text-gray-400">
+                    <th className="px-6 py-4 font-medium">Name</th>
+                    <th className="px-6 py-4 font-medium">Wallet</th>
+                    <th className="px-6 py-4 font-medium">Role</th>
+                    <th className="px-6 py-4 font-medium text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
 
-                    <td className="px-4 py-3">
-                      {user.role || (
-                        <span className="text-gray-400">USER</span>
-                      )}
-                    </td>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr
+                      key={user.walletAddress}
+                      className="border-b border-white/5 hover:bg-white/5 transition"
+                    >
+                      <td className="px-6 py-4 font-medium">
+                        {user.name || "N/A"}
+                      </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2 justify-center flex-wrap">
+                      <td className="px-6 py-4 text-gray-400 font-mono text-xs">
+                        {user.walletAddress}
+                      </td>
 
-                        {/* SUPER ADMIN */}
-                        {canAssignAdmin && user.role !== "SUPER_ADMIN" && (
-                          <button
-                            onClick={() =>
-                              handleAssignRole(user.walletAddress, "SUPER_ADMIN")
-                            }
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Make Admin
-                          </button>
-                        )}
+                      <td className="px-6 py-4">
+                        <RoleBadge role={user.role || "USER"} />
+                      </td>
 
-                        {canAssignAdmin && user.role === "SUPER_ADMIN" && (
-                          <button
-                            onClick={() =>
-                              handleRemoveRole(user.walletAddress, "SUPER_ADMIN")
-                            }
-                            className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Remove Admin
-                          </button>
-                        )}
-
-                        {/* ELECTION MANAGER */}
-                        {canAssignManager && user.role !== "ELECTION_MANAGER" && (
-                          <button
-                            onClick={() =>
-                              handleAssignRole(
-                                user.walletAddress,
-                                "ELECTION_MANAGER"
-                              )
-                            }
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Add Manager
-                          </button>
-                        )}
-
-                        {canAssignManager && user.role === "ELECTION_MANAGER" && (
-                          <button
-                            onClick={() =>
-                              handleRemoveRole(
-                                user.walletAddress,
-                                "ELECTION_MANAGER"
-                              )
-                            }
-                            className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Remove Manager
-                          </button>
-                        )}
-
-                        {/* ELECTION AUTHORITY */}
-                        {canAssignAuthority &&
-                          user.role !== "ELECTION_AUTHORITY" && (
-                            <button
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {/* SUPER ADMIN */}
+                          {canAssignAdmin && user.role !== "SUPER_ADMIN" && (
+                            <ActionButton
+                              label="Make Admin"
                               onClick={() =>
                                 handleAssignRole(
                                   user.walletAddress,
-                                  "ELECTION_AUTHORITY"
+                                  "SUPER_ADMIN"
                                 )
                               }
-                              className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                            >
-                              Add Authority
-                            </button>
+                            />
                           )}
 
-                        {/* VOTER */}
-                        {canAssignVoter && user.role !== "VOTER" && (
-                          <button
-                            onClick={() =>
-                              handleAssignRole(user.walletAddress, "VOTER")
-                            }
-                            className="bg-indigo-500 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Add Voter
-                          </button>
-                        )}
+                          {canAssignAdmin && user.role === "SUPER_ADMIN" && (
+                            <DangerButton
+                              label="Remove Admin"
+                              onClick={() =>
+                                handleRemoveRole(
+                                  user.walletAddress,
+                                  "SUPER_ADMIN"
+                                )
+                              }
+                            />
+                          )}
 
-                        {canAssignVoter && user.role === "VOTER" && (
-                          <button
-                            onClick={() =>
-                              handleRemoveRole(user.walletAddress, "VOTER")
-                            }
-                            className="bg-gray-500 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Remove Voter
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                          {/* MANAGER */}
+                          {canAssignManager &&
+                            user.role !== "ELECTION_MANAGER" && (
+                              <ActionButton
+                                label="Add Manager"
+                                onClick={() =>
+                                  handleAssignRole(
+                                    user.walletAddress,
+                                    "ELECTION_MANAGER"
+                                  )
+                                }
+                              />
+                            )}
+
+                          {canAssignManager &&
+                            user.role === "ELECTION_MANAGER" && (
+                              <DangerButton
+                                label="Remove Manager"
+                                onClick={() =>
+                                  handleRemoveRole(
+                                    user.walletAddress,
+                                    "ELECTION_MANAGER"
+                                  )
+                                }
+                              />
+                            )}
+
+                          {/* AUTHORITY */}
+                          {canAssignAuthority &&
+                            user.role !== "ELECTION_AUTHORITY" && (
+                              <ActionButton
+                                label="Add Authority"
+                                onClick={() =>
+                                  handleAssignRole(
+                                    user.walletAddress,
+                                    "ELECTION_AUTHORITY"
+                                  )
+                                }
+                              />
+                            )}
+
+                          {/* VOTER */}
+                          {canAssignVoter && user.role !== "VOTER" && (
+                            <ActionButton
+                              label="Add Voter"
+                              onClick={() =>
+                                handleAssignRole(
+                                  user.walletAddress,
+                                  "VOTER"
+                                )
+                              }
+                            />
+                          )}
+
+                          {canAssignVoter && user.role === "VOTER" && (
+                            <DangerButton
+                              label="Remove Voter"
+                              onClick={() =>
+                                handleRemoveRole(
+                                  user.walletAddress,
+                                  "VOTER"
+                                )
+                              }
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+/* ---------- UI Components ---------- */
+
+const RoleBadge = ({ role }) => {
+  const colors = {
+    SUPER_ADMIN: "bg-blue-500/10 text-blue-400",
+    ELECTION_MANAGER: "bg-green-500/10 text-green-400",
+    ELECTION_AUTHORITY: "bg-purple-500/10 text-purple-400",
+    VOTER: "bg-indigo-500/10 text-indigo-400",
+    USER: "bg-gray-500/10 text-gray-400",
+  };
+
+  return (
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+        colors[role] || colors.USER
+      }`}
+    >
+      {role}
+    </span>
+  );
+};
+
+const ActionButton = ({ label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="px-3 py-1.5 rounded-md text-xs
+               bg-white/5 border border-white/10
+               hover:bg-white/10 transition"
+  >
+    {label}
+  </button>
+);
+
+const DangerButton = ({ label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="px-3 py-1.5 rounded-md text-xs
+               bg-red-500/10 text-red-400
+               hover:bg-red-500/20 transition"
+  >
+    {label}
+  </button>
+);

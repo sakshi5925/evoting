@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   startCandidateRegistration,
-  startVoting,
   deactivateElection,
   reactivateElection,
   getUpcomingElections,
@@ -24,82 +23,105 @@ const UpcomingElectionDetail = () => {
   const [election, setElection] = useState(null);
   const [privateKey, setPrivateKey] = useState("");
 
-  /* ---------------- ROLES ---------------- */
+  /* ---------- ROLES ---------- */
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const isManager = user?.role === "ELECTION_MANAGER";
   const isAuthority = user?.role === "ELECTION_AUTHORITY";
 
-  /* ---------------- FETCH ELECTIONS ---------------- */
+  /* ---------- FETCH ---------- */
   useEffect(() => {
     if (!upcomingElections.length) {
       dispatch(getUpcomingElections());
     }
   }, [dispatch, upcomingElections.length]);
 
-  /* ---------------- FIND ELECTION ---------------- */
+  /* ---------- FIND ---------- */
   useEffect(() => {
     if (!id || !upcomingElections.length) return;
     setElection(upcomingElections.find((e) => e._id === id) || null);
   }, [id, upcomingElections]);
 
   if (isLoading) {
-    return <p className="text-center text-blue-400 mt-20">Loading…</p>;
+    return (
+      <div className="min-h-screen bg-[#0b0f14] flex items-center justify-center text-gray-400">
+        Loading election…
+      </div>
+    );
   }
 
   if (!election) {
-    return <p className="text-center text-gray-400 mt-20">Election not found</p>;
+    return (
+      <div className="min-h-screen bg-[#0b0f14] flex items-center justify-center text-gray-400">
+        Election not found
+      </div>
+    );
   }
 
-  /* ---------------- HELPERS ---------------- */
+  /* ---------- HELPERS ---------- */
   const status = election.status;
   const deadline = new Date(election.registrationDeadline * 1000);
-
-  const canStartRegistration = isManager && status === "Created";
-  const canStartVoting = isManager && status === "Registration";
-  const canValidateCandidates = (isManager || isAuthority) && status === "Registration";
-  const canDeactivate = isSuperAdmin && election.isActive;
-  const canReactivate = isSuperAdmin && !election.isActive;
 
   const isRegistrationOpen =
     status === "Registration" && Date.now() < deadline.getTime();
 
-  /* ---------------- UI ---------------- */
+  const canStartRegistration = isManager && status === "Created";
+  const canValidateCandidates =
+    (isManager || isAuthority) && status === "Registration";
+  const canDeactivate = isSuperAdmin && election.isActive;
+  const canReactivate = isSuperAdmin && !election.isActive;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 px-6 py-12">
+    <div className="min-h-screen bg-[#0b0f14] px-6 py-12 text-gray-100">
       <div className="max-w-6xl mx-auto space-y-10">
 
-        {/* BACK */}
-        <button
-          onClick={() => navigate(-1)}
-          className="text-sm text-slate-400 hover:text-slate-200"
-        >
-          ← Back to Elections
-        </button>
+        {/* Header */}
+        <div>
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-3 text-sm text-gray-400 hover:text-gray-200 transition"
+          >
+            ← Back
+          </button>
 
-        {/* HEADER */}
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 space-y-3">
-          <h1 className="text-3xl font-semibold">{election.name}</h1>
-          <p className="text-slate-400">{election.description}</p>
-
-          <span className="inline-block px-3 py-1 text-xs font-medium rounded-full border border-blue-400 text-blue-400">
-            Status: {status}
-          </span>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {election.ElectionName}
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Upcoming Election · Status:{" "}
+            <span className="text-blue-400 font-medium">{status}</span>
+          </p>
         </div>
 
-        {/* DATES */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <InfoCard label="Start Date" value={new Date(election.startdate).toDateString()} />
-          <InfoCard label="End Date" value={new Date(election.enddate).toDateString()} />
-          <InfoCard label="Registration Deadline" value={deadline.toDateString()} />
+        {/* Summary */}
+        <div className="bg-[#0f172a] border border-white/10 rounded-xl p-6">
+          <p className="text-gray-300">{election.description}</p>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+            <Stat
+              label="Start Date"
+              value={new Date(election.startdate).toDateString()}
+            />
+            <Stat
+              label="End Date"
+              value={new Date(election.enddate).toDateString()}
+            />
+            <Stat
+              label="Registration Deadline"
+              value={deadline.toDateString()}
+              highlight
+            />
+          </div>
         </div>
 
-        {/* PARTICIPATION */}
+        {/* Participation */}
         {isRegistrationOpen && (
-          <section className="bg-slate-900 border border-slate-700 rounded-xl p-8">
-            <h2 className="text-lg font-semibold mb-6">Participation</h2>
+          <div className="bg-[#0f172a] border border-white/10 rounded-xl p-6">
+            <h2 className="text-lg font-medium mb-4">
+              Participation
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ActionButton
+              <PrimaryButton
                 label="Register as Voter"
                 onClick={async () => {
                   if (!user?.walletAddress) {
@@ -111,86 +133,83 @@ const UpcomingElectionDetail = () => {
                     registerVoter({ walletAddress: user.walletAddress })
                   );
 
-                
                   if (registerVoter.fulfilled.match(result)) {
-                    alert(result.payload.message); 
-                  }
-
-                  
-                  if (registerVoter.rejected.match(result)) {
-                    alert(result.payload || "Failed to register voter");
+                    alert(result.payload.message);
+                  } else {
+                    alert(result.payload || "Registration failed");
                   }
                 }}
               />
-              <ActionButton
+
+              <PrimaryButton
                 label="Register as Candidate"
                 onClick={() =>
-                  navigate(`/register-candidate/${election.contractAddress}`)
+                  navigate(
+                    `/register-candidate/${election.contractAddress}`
+                  )
                 }
               />
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ADMIN / MANAGER / AUTHORITY */}
+        {/* Administrative Controls */}
         {(isManager || isAuthority || isSuperAdmin) && (
-          <section className="bg-slate-900 border border-red-500/40 rounded-xl p-8 space-y-6">
-            <h2 className="text-lg font-semibold text-red-400">
+          <div className="bg-red-500/5 border border-red-500/30 rounded-xl p-6 space-y-6">
+            <h2 className="text-lg font-medium text-red-400">
               Administrative Controls
             </h2>
 
-            {/* PRIVATE KEY */}
             <input
               type="password"
-              placeholder="Private key (required for blockchain actions)"
+              placeholder="Private key (required)"
               value={privateKey}
               onChange={(e) => setPrivateKey(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:border-red-400 focus:outline-none"
+              className="w-full px-4 py-3 rounded-md bg-[#020617]
+                         border border-white/10 text-gray-200"
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-              {/* MANAGER */}
               {isManager && (
-                <>
-                  <AdminButton
-                    label="Start Registration"
-                    disabled={!privateKey || !canStartRegistration}
-                    onClick={() =>
-                      dispatch(startCandidateRegistration({
+                <AdminButton
+                  label="Start Registration"
+                  disabled={!privateKey || !canStartRegistration}
+                  onClick={() =>
+                    dispatch(
+                      startCandidateRegistration({
                         privateKey,
                         electionAddress: election.contractAddress,
-                      }))
-                    }
-                  />
-
-                  
-                </>
+                      })
+                    )
+                  }
+                />
               )}
 
-              {/* VALIDATE */}
               {(isManager || isAuthority) && (
                 <AdminButton
                   label="Validate Candidates"
                   disabled={!canValidateCandidates}
                   onClick={() =>
-                    navigate(`/validate-candidates/${election.contractAddress}`)
+                    navigate(
+                      `/validate-candidates/${election.contractAddress}`
+                    )
                   }
                 />
               )}
 
-              {/* SUPER ADMIN */}
               {isSuperAdmin && (
                 <>
-                  <AdminButton
+                  <DangerButton
                     label="Deactivate Election"
                     disabled={!privateKey || !canDeactivate}
-                    danger
                     onClick={() =>
-                      dispatch(deactivateElection({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      }))
+                      dispatch(
+                        deactivateElection({
+                          privateKey,
+                          electionAddress: election.contractAddress,
+                        })
+                      )
                     }
                   />
 
@@ -198,20 +217,24 @@ const UpcomingElectionDetail = () => {
                     label="Reactivate Election"
                     disabled={!privateKey || !canReactivate}
                     onClick={() =>
-                      dispatch(reactivateElection({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      }))
+                      dispatch(
+                        reactivateElection({
+                          privateKey,
+                          electionAddress: election.contractAddress,
+                        })
+                      )
                     }
                   />
                 </>
               )}
             </div>
-          </section>
+          </div>
         )}
 
         {error && (
-          <p className="text-center text-red-400 text-sm">{error}</p>
+          <p className="text-center text-red-400 text-sm">
+            {error}
+          </p>
         )}
       </div>
     </div>
@@ -220,34 +243,55 @@ const UpcomingElectionDetail = () => {
 
 export default UpcomingElectionDetail;
 
-/* ---------------- UI COMPONENTS ---------------- */
+/* ---------- UI HELPERS ---------- */
 
-const InfoCard = ({ label, value }) => (
-  <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
-    <p className="text-sm text-slate-400">{label}</p>
-    <p className="mt-2 font-medium">{value}</p>
+const Stat = ({ label, value, highlight }) => (
+  <div>
+    <p className="text-xs text-gray-400">{label}</p>
+    <p
+      className={`mt-1 text-sm font-medium ${
+        highlight ? "text-blue-400" : "text-gray-200"
+      }`}
+    >
+      {value}
+    </p>
   </div>
 );
 
-const ActionButton = ({ label, onClick }) => (
+const PrimaryButton = ({ label, onClick }) => (
   <button
     onClick={onClick}
-    className="py-3 rounded-lg border border-blue-500 text-blue-400 hover:bg-blue-500/10 transition font-medium"
+    className="py-3 rounded-md border border-blue-500/40
+               text-blue-400 hover:bg-blue-500/10 transition font-medium"
   >
     {label}
   </button>
 );
 
-const AdminButton = ({ label, onClick, disabled, danger }) => (
+const AdminButton = ({ label, onClick, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`py-3 rounded-lg font-medium transition border
-      ${disabled
-        ? "border-slate-700 text-slate-500 cursor-not-allowed"
-        : danger
-          ? "border-red-500 text-red-400 hover:bg-red-500/10"
-          : "border-slate-600 text-slate-200 hover:bg-slate-800"
+    className={`py-3 rounded-md border transition font-medium
+      ${
+        disabled
+          ? "border-white/10 text-gray-500 cursor-not-allowed"
+          : "border-white/20 text-gray-200 hover:bg-white/5"
+      }`}
+  >
+    {label}
+  </button>
+);
+
+const DangerButton = ({ label, onClick, disabled }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`py-3 rounded-md border transition font-medium
+      ${
+        disabled
+          ? "border-red-500/20 text-red-500/40 cursor-not-allowed"
+          : "border-red-500 text-red-400 hover:bg-red-500/10"
       }`}
   >
     {label}

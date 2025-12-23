@@ -14,7 +14,6 @@ const ElectionsPage = () => {
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
-
   const {
     upcomingElections,
     OngoingElections,
@@ -23,63 +22,93 @@ const ElectionsPage = () => {
     error,
   } = useSelector((state) => state.election);
 
-  // 🔥 FETCH DATA ON LOAD
   useEffect(() => {
     dispatch(getUpcomingElections());
     dispatch(getOngoingElections());
     dispatch(getCompletedElections());
   }, [dispatch]);
 
+  const canManageUsers = ["SUPER_ADMIN", "ELECTION_MANAGER", "ELECTION_AUTHORITY"].includes(
+    user?.role
+  );
+
   return (
-    <div className="bg-[#0d1117] min-h-screen text-white px-6 py-10">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <h1 className="text-4xl font-extrabold mb-4">
-          Elections Overview
-        </h1>
+    <div className="min-h-screen bg-[#0b0f14] text-gray-100">
+      {/* Header */}
+      <div className="border-b border-white/10 bg-[#0b0f14] sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Elections
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">
+              Platform-wide election monitoring & control
+            </p>
+          </div>
 
-        {/* Manage Users → Admin + Manager + Authority */}
-        {["SUPER_ADMIN", "ELECTION_MANAGER", "ELECTION_AUTHORITY"].includes(user?.role) && (
-          <button
-            onClick={() => navigate("/manage-users")}
-            className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600"
-          >
-            Manage Users
-          </button>
-        )}
+          <div className="flex items-center gap-3">
+            {canManageUsers && (
+              <button
+                onClick={() => navigate("/manage-users")}
+                className="px-4 py-2 text-sm rounded-md border border-white/10
+                           bg-[#0f172a] hover:bg-[#111827] transition"
+              >
+                Manage Users
+              </button>
+            )}
 
-        {/* Create Election → ONLY Super Admin */}
-        {user?.role === "SUPER_ADMIN" && (
-          <button
-            onClick={() => navigate("/create-election")}
-            className="px-5 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600"
-          >
-            + Create Election
-          </button>
-        )}
-
+            {user?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => navigate("/create-election")}
+                className="px-4 py-2 text-sm rounded-md bg-blue-600
+                           hover:bg-blue-700 transition font-medium"
+              >
+                Create Election
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {isLoading && <p className="text-center">Loading...</p>}
-      {error && <p className="text-center text-red-400">{error}</p>}
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        {isLoading && (
+          <div className="text-sm text-gray-400">Loading elections…</div>
+        )}
 
-      <div className="max-w-7xl mx-auto mt-10 space-y-16">
-        <ElectionSection
-          title="Upcoming Elections"
-          data={upcomingElections}
-        />
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-400">
+            {error}
+          </div>
+        )}
 
-        <ElectionSection
-          title="Ongoing Elections"
-          data={OngoingElections}
-        />
+        {!isLoading && !error && (
+          <>
+            <SectionCard title="Upcoming Elections">
+              <ElectionSection data={upcomingElections} />
+            </SectionCard>
 
-        <ElectionSection
-          title="Completed Elections"
-          data={CompletedElections}
-        />
+            <SectionCard title="Ongoing Elections">
+              <ElectionSection data={OngoingElections} />
+            </SectionCard>
+
+            <SectionCard title="Completed Elections">
+              <ElectionSection data={CompletedElections} />
+            </SectionCard>
+          </>
+        )}
       </div>
     </div>
   );
 };
+
+const SectionCard = ({ title, children }) => (
+  <div className="bg-[#0f172a] border border-white/10 rounded-xl">
+    <div className="px-6 py-4 border-b border-white/10">
+      <h2 className="text-lg font-medium tracking-tight">{title}</h2>
+    </div>
+    <div className="p-6">{children}</div>
+  </div>
+);
 
 export default ElectionsPage;

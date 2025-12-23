@@ -33,69 +33,61 @@ const RegisterCandidate = () => {
 
     if (registerCandidate.fulfilled.match(result)) {
       alert("Candidate registered successfully");
-      navigate(-1); 
+      navigate(-1);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-xl p-8 space-y-6">
+    <div className="min-h-screen bg-[#0b0f14] flex items-center justify-center px-6 py-12 text-gray-100">
+      <div className="w-full max-w-lg bg-[#0f172a] border border-white/10 rounded-xl p-8 space-y-8">
 
-        <h1 className="text-2xl font-semibold text-center text-green-400">
-          Candidate Registration
-        </h1>
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Candidate Registration
+          </h1>
 
-        <p className="text-xs text-slate-400 break-all text-center">
-          Election Contract: {electionAddress}
-        </p>
+          <p className="text-xs text-gray-400 font-mono break-all">
+            Election Address: {electionAddress}
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Candidate Name */}
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">
-              Candidate Name
-            </label>
-            <input
-              type="text"
-              value={candidateName}
-              onChange={(e) => setCandidateName(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded focus:outline-none focus:border-green-400"
-              placeholder="Enter your name"
-              required
-            />
-          </div>
+          <Field
+            label="Candidate Name"
+            placeholder="Your full name"
+            value={candidateName}
+            onChange={(e) => setCandidateName(e.target.value)}
+          />
 
           {/* Party */}
-          <div>
-            <label className="block text-sm text-slate-400 mb-1">
-              Party / Group
-            </label>
-            <input
-              type="text"
-              value={party}
-              onChange={(e) => setParty(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded focus:outline-none focus:border-green-400"
-              placeholder="Enter party name"
-              required
-            />
-          </div>
+          <Field
+            label="Party / Group"
+            placeholder="Party or independent group"
+            value={party}
+            onChange={(e) => setParty(e.target.value)}
+          />
 
           {/* Private Key */}
           <div>
-            <label className="block text-sm text-slate-400 mb-1">
+            <label className="block text-sm text-gray-300 mb-1">
               Wallet Private Key
             </label>
             <input
               type="password"
               value={privateKey}
               onChange={(e) => setPrivateKey(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded focus:outline-none focus:border-red-400"
               placeholder="Required to sign transaction"
+              className="w-full px-4 py-3 rounded-md bg-[#020617]
+                         border border-red-500/40 text-gray-200
+                         focus:outline-none focus:border-red-400"
               required
             />
-            <p className="text-xs text-red-400 mt-1">
-              ⚠ Never share your private key with anyone
+            <p className="text-xs text-red-400 mt-2">
+              ⚠ This key is used only to sign the transaction and is never stored.
             </p>
           </div>
 
@@ -103,11 +95,12 @@ const RegisterCandidate = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 rounded font-semibold transition ${
-              isLoading
-                ? "bg-slate-700 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            className={`w-full py-3 rounded-md font-medium transition
+              ${
+                isLoading
+                  ? "bg-gray-700 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
           >
             {isLoading ? "Registering…" : "Register as Candidate"}
           </button>
@@ -123,7 +116,7 @@ const RegisterCandidate = () => {
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="w-full text-sm text-slate-400 hover:text-slate-200 mt-2"
+          className="w-full text-sm text-gray-400 hover:text-gray-200 transition"
         >
           ← Back
         </button>
@@ -133,3 +126,21 @@ const RegisterCandidate = () => {
 };
 
 export default RegisterCandidate;
+
+/* ---------- UI Helper ---------- */
+
+const Field = ({ label, ...props }) => (
+  <div>
+    <label className="block text-sm text-gray-300 mb-1">
+      {label}
+    </label>
+    <input
+      {...props}
+      type="text"
+      className="w-full px-4 py-3 rounded-md bg-[#020617]
+                 border border-white/10 text-gray-200
+                 focus:outline-none focus:border-blue-400"
+      required
+    />
+  </div>
+);
