@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { getApprovedCandidates } from "../../../redux/slices/candidateSlice";
+import { endElection, declareResults } from "../../../redux/slices/electionSlice";
 
 const CompletedElectionDetail = ({ election }) => {
   const navigate = useNavigate();
@@ -10,6 +11,14 @@ const CompletedElectionDetail = ({ election }) => {
 
   const { approvedCandidates = [] } = useSelector(
     (state) => state.candidate
+  );
+
+  const { user } = useSelector((state) => state.auth);
+  const isManager = user?.role === "ELECTION_MANAGER";
+
+  const [privateKey, setPrivateKey] = useState("");
+  const [resultsDeclared, setResultsDeclared] = useState(
+    election.status === "ResultDeclared"
   );
 
   useEffect(() => {
@@ -33,13 +42,36 @@ const CompletedElectionDetail = ({ election }) => {
   const start = new Date(election.startdate);
   const end = new Date(election.enddate);
 
-  // 🏆 Winner
+  // 🏆 Winner (only after results declared)
   const winner = useMemo(() => {
-    if (!approvedCandidates.length) return null;
+    if (!resultsDeclared || !approvedCandidates.length) return null;
     return approvedCandidates.reduce((max, c) =>
       c.voteCount > max.voteCount ? c : max
     );
-  }, [approvedCandidates]);
+  }, [approvedCandidates, resultsDeclared]);
+
+  const handleDeclareResults = async () => {
+    if (!privateKey) {
+      alert("Private key required");
+      return;
+    }
+
+    await dispatch(
+      endElection({
+        privateKey,
+        electionAddress: election.contractAddress,
+      })
+    );
+
+    await dispatch(
+      declareResults({
+        privateKey,
+        electionAddress: election.contractAddress,
+      })
+    );
+
+    setResultsDeclared(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#0b0f14] px-6 py-12 text-gray-100">
@@ -59,117 +91,127 @@ const CompletedElectionDetail = ({ election }) => {
           </h1>
 
           <p className="text-sm text-gray-400 mt-1">
-            Election Results · Status:{" "}
-            <span className="text-green-400 font-medium">Completed</span>
+            Status:{" "}
+            <span className="text-green-400 font-medium">{election.status}</span>
           </p>
         </div>
 
-        {/* Summary Card */}
+        {/* Summary */}
         <div className="bg-[#0f172a] border border-white/10 rounded-xl p-6 mb-10">
           <p className="text-gray-300">{election.description}</p>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <Stat label="Start Date" value={start.toDateString()} />
             <Stat label="End Date" value={end.toDateString()} />
-            <Stat
-              label="Total Votes"
-              value={election.totalVotes}
-              highlight
-            />
+            <Stat label="Total Votes" value={election.totalVotes} highlight />
           </div>
         </div>
 
-        {/* Winner */}
-        {winner && (
-          <div className="mb-12 bg-yellow-500/5 border border-yellow-500/30 rounded-xl p-6">
-            <h2 className="text-lg font-medium text-yellow-400 mb-2">
-              🏆 Winner
+        {/* Manager Controls */}
+        {isManager && !resultsDeclared && (
+          <div className="mb-10 bg-red-500/5 border border-red-500/30 rounded-xl p-6">
+            <h2 className="text-lg font-medium text-red-400 mb-4">
+              Manager Controls
             </h2>
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <p className="text-xl font-semibold">{winner.name}</p>
-                <p className="text-sm text-gray-400">
-                  Party: {winner.party}
-                </p>
-              </div>
+            <input
+              type="password"
+              placeholder="Manager private key"
+              value={privateKey}
+              onChange={(e) => setPrivateKey(e.target.value)}
+              className="w-full mb-4 px-4 py-3 rounded-md bg-[#020617]
+                         border border-white/10 text-gray-200"
+            />
 
-              <div className="text-yellow-400 font-semibold">
-                Votes: {winner.voteCount}
-              </div>
-            </div>
+            <button
+              onClick={handleDeclareResults}
+              className="py-2 px-6 rounded-md bg-yellow-500 text-black
+                         hover:bg-yellow-600 transition"
+            >
+              End Election & Declare Results
+            </button>
           </div>
         )}
 
-        {/* Results Table */}
-        <div className="bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10">
-            <h2 className="text-lg font-medium">Final Results</h2>
-          </div>
+        {/* Results (VISIBLE ONLY AFTER DECLARATION) */}
+        {resultsDeclared && (
+          <>
+            {/* Winner */}
+            {winner && (
+              <div className="mb-12 bg-yellow-500/5 border border-yellow-500/30 rounded-xl p-6">
+                <h2 className="text-lg font-medium text-yellow-400 mb-2">
+                  🏆 Winner
+                </h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[#020617] text-gray-400">
-                <tr>
-                  <th className="px-6 py-4 text-left font-medium">
-                    Candidate
-                  </th>
-                  <th className="px-6 py-4 text-left font-medium">
-                    Party
-                  </th>
-                  <th className="px-6 py-4 text-right font-medium">
-                    Votes
-                  </th>
-                  <th className="px-6 py-4 text-center font-medium">
-                    Result
-                  </th>
-                </tr>
-              </thead>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <p className="text-xl font-semibold">{winner.name}</p>
+                    <p className="text-sm text-gray-400">
+                      Party: {winner.party}
+                    </p>
+                  </div>
 
-              <tbody>
-                {approvedCandidates.map((c) => {
-                  const isWinner =
-                    winner && c._id === winner._id;
+                  <div className="text-yellow-400 font-semibold">
+                    Votes: {winner.voteCount}
+                  </div>
+                </div>
+              </div>
+            )}
 
-                  return (
-                    <tr
-                      key={c.candidateId}
-                      className={`border-b border-white/5 ${
-                        isWinner
-                          ? "bg-yellow-500/10"
-                          : "hover:bg-white/5"
-                      }`}
-                    >
-                      <td className="px-6 py-4 font-medium">
-                        {c.name}
-                      </td>
+            {/* Results Table */}
+            <div className="bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-white/10">
+                <h2 className="text-lg font-medium">Final Results</h2>
+              </div>
 
-                      <td className="px-6 py-4 text-gray-400">
-                        {c.party}
-                      </td>
-
-                      <td className="px-6 py-4 text-right font-mono">
-                        {c.voteCount}
-                      </td>
-
-                      <td className="px-6 py-4 text-center">
-                        {isWinner ? (
-                          <span className="px-3 py-1 rounded-full text-xs
-                                           bg-yellow-500/20 text-yellow-400">
-                            Winner
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-[#020617] text-gray-400">
+                    <tr>
+                      <th className="px-6 py-4 text-left">Candidate</th>
+                      <th className="px-6 py-4 text-left">Party</th>
+                      <th className="px-6 py-4 text-right">Votes</th>
+                      <th className="px-6 py-4 text-center">Result</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  </thead>
 
+                  <tbody>
+                    {approvedCandidates.map((c) => {
+                      const isWinner = winner && c._id === winner._id;
+
+                      return (
+                        <tr
+                          key={c.candidateId}
+                          className={`border-b border-white/5 ${
+                            isWinner
+                              ? "bg-yellow-500/10"
+                              : "hover:bg-white/5"
+                          }`}
+                        >
+                          <td className="px-6 py-4 font-medium">{c.name}</td>
+                          <td className="px-6 py-4 text-gray-400">{c.party}</td>
+                          <td className="px-6 py-4 text-right font-mono">
+                            {c.voteCount}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {isWinner ? (
+                              <span className="px-3 py-1 rounded-full text-xs
+                                bg-yellow-500/20 text-yellow-400">
+                                Winner
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

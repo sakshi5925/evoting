@@ -126,7 +126,7 @@ export const declareResults = createAsyncThunk(
   "election/declareResults",
   async ({ privateKey, electionAddress }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_BASE}/election/declareResults`, { electionAddress });
+      const response = await axios.post(`${API_BASE}/election/declareResults`, { electionAddress,privateKey });
       return response.data;
     } catch (err) {
       return rejectWithValue(err.message);

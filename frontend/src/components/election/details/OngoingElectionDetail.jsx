@@ -85,8 +85,8 @@ const OngoingElectionDetail = ({ election }) => {
           </div>
         </div>
 
-        {/* Manager Controls */}
-        {isManager && (
+        {/* Manager Controls (ONLY during Registration) */}
+        {isManager && status === "Registration" && (
           <div className="mb-12 bg-red-500/5 border border-red-500/30 rounded-xl p-6">
             <h2 className="text-lg font-medium text-red-400 mb-4">
               Manager Controls
@@ -98,55 +98,21 @@ const OngoingElectionDetail = ({ election }) => {
               value={privateKey}
               onChange={(e) => setPrivateKey(e.target.value)}
               className="w-full mb-4 px-4 py-3 rounded-md bg-[#020617]
-                         border border-white/10 text-gray-200"
+                 border border-white/10 text-gray-200"
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {status === "Registration" && (
-                <PrimaryButton
-                  label="Start Voting"
-                  onClick={() =>
-                    requireKey() &&
-                    dispatch(
-                      startVoting({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      })
-                    )
-                  }
-                />
-              )}
-
-              {status === "Voting" && (
-                <DangerButton
-                  label="End Election"
-                  onClick={() =>
-                    requireKey() &&
-                    dispatch(
-                      endElection({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      })
-                    )
-                  }
-                />
-              )}
-
-              {status === "Ended" && (
-                <WarningButton
-                  label="Declare Results"
-                  onClick={() =>
-                    requireKey() &&
-                    dispatch(
-                      declareResults({
-                        privateKey,
-                        electionAddress: election.contractAddress,
-                      })
-                    ).then(() => setShowResults(true))
-                  }
-                />
-              )}
-            </div>
+            <PrimaryButton
+              label="Start Voting"
+              onClick={() =>
+                requireKey() &&
+                dispatch(
+                  startVoting({
+                    privateKey,
+                    electionAddress: election.contractAddress,
+                  })
+                )
+              }
+            />
           </div>
         )}
 
